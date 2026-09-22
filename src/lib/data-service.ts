@@ -9,6 +9,7 @@ import type {
   ActivityAction,
   User,
   OutreachRecord,
+  MastersCourse,
 } from '@/types';
 
 type UserRow = {
@@ -23,7 +24,7 @@ type UserRow = {
 };
 
 export async function getAppData(user: User | UserRow): Promise<AppData> {
-  const [unis, logs] = await Promise.all([
+  const [unis, logs, courses] = await Promise.all([
     prisma.university.findMany({
       orderBy: { createdAt: 'asc' },
       include: {
@@ -47,6 +48,11 @@ export async function getAppData(user: User | UserRow): Promise<AppData> {
       where: { userId: user.id },
       orderBy: { timestamp: 'desc' },
       take: 50,
+    }),
+    prisma.mastersCourse.findMany({
+      where: { OR: [{ ownerId: user.id }, { visibility: 'public' }] },
+      orderBy: { updatedAt: 'desc' },
+      include: { owner: { select: { name: true } } },
     }),
   ]);
 
@@ -114,9 +120,25 @@ export async function getAppData(user: User | UserRow): Promise<AppData> {
     metadata: (log.metadata ?? undefined) as ActivityLog['metadata'],
   }));
 
+  const mastersCourses: MastersCourse[] = courses.map((c) => ({
+    id: c.id,
+    universityName: c.universityName,
+    departmentName: c.departmentName,
+    ieltsReq: c.ieltsReq,
+    lastDate: c.lastDate,
+    applicationLink: c.applicationLink,
+    visibility: (c.visibility === 'public' ? 'public' : 'private') as MastersCourse['visibility'],
+    ownerId: c.ownerId ?? undefined,
+    ownerName: c.owner?.name,
+    isMine: c.ownerId === user.id,
+    createdAt: c.createdAt.toISOString(),
+    updatedAt: c.updatedAt.toISOString(),
+  }));
+
   return {
     version: '1.0.0',
     universities,
+    mastersCourses,
     me: {
       id: user.id,
       username: user.username,

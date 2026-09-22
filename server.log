@@ -5,9 +5,9 @@
 ▲ Next.js 16.3.5
 - Local:         http://localhost:3000
 - Network:       http://192.168.0.111:3000
-✓ Ready in 199ms
-✓ Running next.config.ts took 48ms
-(node:15944) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+✓ Ready in 209ms
+✓ Running next.config.ts took 43ms
+(node:17416) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
 In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
 
 To prepare for this change:

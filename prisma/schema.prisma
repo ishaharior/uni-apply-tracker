@@ -22,6 +22,7 @@ model User {
   activityLogs ActivityLog[]
   professors   Professor[]
   bookmarks    ProfessorBookmark[]
+  mastersCourses MastersCourse[]
 }
 
 model University {
@@ -87,6 +88,23 @@ model ProfessorBookmark {
 
   @@unique([userId, professorId])
   @@index([professorId])
+}
+
+model MastersCourse {
+  id              String   @id @default(cuid())
+  universityName  String
+  departmentName  String
+  ieltsReq        String   @default("")
+  lastDate        String   @default("")
+  applicationLink String   @default("")
+  visibility      String   @default("private")
+  ownerId         String?
+  owner           User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([visibility])
 }
 
 model OutreachRecord {

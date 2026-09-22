@@ -82,6 +82,7 @@ export async function importDataset(
 
   await prisma.activityLog.deleteMany({});
   await prisma.professorBookmark.deleteMany({});
+  await prisma.mastersCourse.deleteMany({});
   await prisma.university.deleteMany({});
 
   let baseTime = Date.now() - (data.universities.length + 1) * 60_000;

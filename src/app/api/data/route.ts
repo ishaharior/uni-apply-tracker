@@ -383,6 +383,103 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, data: appData });
       }
 
+      case 'ADD_MASTERS_COURSE': {
+        const p = payload ?? {};
+        const course = await prisma.mastersCourse.create({
+          data: {
+            universityName: String(p.universityName ?? '').trim() || 'Unknown University',
+            departmentName: String(p.departmentName ?? '').trim() || 'Unknown Department',
+            ieltsReq: String(p.ieltsReq ?? '').trim(),
+            lastDate: String(p.lastDate ?? '').trim(),
+            applicationLink: String(p.applicationLink ?? '').trim(),
+            visibility: p.visibility === 'public' ? 'public' : 'private',
+            ownerId: user.id,
+          },
+          include: { owner: { select: { name: true } } },
+        });
+        await logActivity(
+          user.id,
+          'masters_course',
+          `${user.name} added Master's course: ${course.universityName} — ${course.departmentName}`,
+          { universityName: course.universityName, departmentName: course.departmentName }
+        );
+        const appData = await getAppData(user);
+        return NextResponse.json({ success: true, data: appData, added: course });
+      }
+
+      case 'UPDATE_MASTERS_COURSE': {
+        const { id, updates } = payload ?? {};
+        const existing = await prisma.mastersCourse.findUnique({ where: { id } });
+        if (!existing) {
+          return NextResponse.json({ success: false, error: 'Course not found' }, { status: 404 });
+        }
+        if (existing.ownerId !== user.id) {
+          return NextResponse.json({ success: false, error: 'Only the owner can edit this course' }, { status: 403 });
+        }
+        await prisma.mastersCourse.update({
+          where: { id },
+          data: {
+            ...(updates.universityName !== undefined
+              ? { universityName: String(updates.universityName).trim() || existing.universityName }
+              : {}),
+            ...(updates.departmentName !== undefined
+              ? { departmentName: String(updates.departmentName).trim() || existing.departmentName }
+              : {}),
+            ...(updates.ieltsReq !== undefined ? { ieltsReq: String(updates.ieltsReq).trim() } : {}),
+            ...(updates.lastDate !== undefined ? { lastDate: String(updates.lastDate).trim() } : {}),
+            ...(updates.applicationLink !== undefined
+              ? { applicationLink: String(updates.applicationLink).trim() }
+              : {}),
+            ...(updates.visibility !== undefined
+              ? { visibility: updates.visibility === 'public' ? 'public' : 'private' }
+              : {}),
+          },
+        });
+        const appData = await getAppData(user);
+        return NextResponse.json({ success: true, data: appData });
+      }
+
+      case 'DELETE_MASTERS_COURSE': {
+        const { id } = payload ?? {};
+        const existing = await prisma.mastersCourse.findUnique({ where: { id } });
+        if (!existing) {
+          return NextResponse.json({ success: false, error: 'Course not found' }, { status: 404 });
+        }
+        if (existing.ownerId !== user.id) {
+          return NextResponse.json({ success: false, error: 'Only the owner can delete this course' }, { status: 403 });
+        }
+        await prisma.mastersCourse.delete({ where: { id } });
+        await logActivity(
+          user.id,
+          'masters_course',
+          `${user.name} deleted Master's course: ${existing.universityName} — ${existing.departmentName}`,
+          { universityName: existing.universityName, departmentName: existing.departmentName }
+        );
+        const appData = await getAppData(user);
+        return NextResponse.json({ success: true, data: appData });
+      }
+
+      case 'TOGGLE_MASTERS_COURSE_VISIBILITY': {
+        const { id } = payload ?? {};
+        const existing = await prisma.mastersCourse.findUnique({ where: { id } });
+        if (!existing) {
+          return NextResponse.json({ success: false, error: 'Course not found' }, { status: 404 });
+        }
+        if (existing.ownerId !== user.id) {
+          return NextResponse.json({ success: false, error: 'Only the owner can share this course' }, { status: 403 });
+        }
+        const next = existing.visibility === 'public' ? 'private' : 'public';
+        await prisma.mastersCourse.update({ where: { id }, data: { visibility: next } });
+        await logActivity(
+          user.id,
+          'masters_course',
+          `${user.name} set Master's course ${existing.universityName} to ${next}`,
+          { universityName: existing.universityName, departmentName: existing.departmentName }
+        );
+        const appData = await getAppData(user);
+        return NextResponse.json({ success: true, data: appData });
+      }
+
       case 'RESET_DATA': {
         await importDataset(prisma, INITIAL_DATASET, { ownerId: user.id });
         const appData = await getAppData(user);

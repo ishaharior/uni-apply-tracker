@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { AppData, University, Department, Professor, FilterOptions, OutreachRecord } from '@/types';
+import { AppData, University, Department, Professor, FilterOptions, OutreachRecord, MastersCourse } from '@/types';
 import { isOverdueFollowup, getCountryFlag } from '@/lib/utils';
 import Header from '@/components/Header';
 import StatsDashboard from '@/components/StatsDashboard';
 import FilterBar from '@/components/FilterBar';
 import UniversityCard from '@/components/UniversityCard';
 import StatusModal from '@/components/StatusModal';
+import MastersCoursesSection from '@/components/MastersCoursesSection';
 import {
   UniversityModal,
   DepartmentModal,
@@ -16,13 +17,13 @@ import {
 } from '@/components/EntityModals';
 import EmailTemplatesModal from '@/components/EmailTemplatesModal';
 import ActivityModal from '@/components/ActivityModal';
-import { Plus, Building2, RefreshCw, List, Globe2 } from 'lucide-react';
+import { Plus, Building2, RefreshCw, List, Globe2, GraduationCap } from 'lucide-react';
 
 export default function HomePage() {
   const router = useRouter();
   const [data, setData] = useState<AppData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [viewTab, setViewTab] = useState<'my-list' | 'public'>('my-list');
+  const [viewTab, setViewTab] = useState<'my-list' | 'public' | 'masters'>('my-list');
 
   // Filter State
   const [filters, setFilters] = useState<FilterOptions>({
@@ -394,6 +395,29 @@ export default function HomePage() {
     }
   };
 
+  const handleSaveMastersCourse = async (courseData: Partial<MastersCourse>, editingId?: string) => {
+    if (editingId) {
+      await dispatchAction('UPDATE_MASTERS_COURSE', { id: editingId, updates: courseData });
+    } else {
+      await dispatchAction('ADD_MASTERS_COURSE', courseData);
+    }
+  };
+
+  const handleDeleteMastersCourse = async (id: string) => {
+    if (confirm('Delete this Master’s course?')) {
+      await dispatchAction('DELETE_MASTERS_COURSE', { id });
+    }
+  };
+
+  const handleToggleMastersVisibility = async (course: MastersCourse) => {
+    const makingPublic = course.visibility !== 'public';
+    const msg = makingPublic
+      ? `Share "${course.universityName} — ${course.departmentName}" publicly? All users will see it under Public Professors.`
+      : `Make "${course.universityName} — ${course.departmentName}" private? Other users will no longer see it.`;
+    if (!confirm(msg)) return;
+    await dispatchAction('TOGGLE_MASTERS_COURSE_VISIBILITY', { id: course.id });
+  };
+
   const handleExportData = () => {
     if (!data) return;
     const legacy = {
@@ -554,23 +578,71 @@ export default function HomePage() {
             <Globe2 size={16} />
             <span>Public Professors</span>
           </button>
+          <button
+            type="button"
+            onClick={() => setViewTab('masters')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '7px',
+              height: '40px',
+              padding: '0 16px',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              background: viewTab === 'masters' ? 'rgba(251, 191, 36, 0.18)' : 'rgba(255, 255, 255, 0.04)',
+              border: `1px solid ${viewTab === 'masters' ? '#fbbf24' : 'var(--border-subtle)'}`,
+              color: viewTab === 'masters' ? '#fde68a' : 'var(--text-secondary)',
+            }}
+          >
+            <GraduationCap size={16} />
+            <span>Master&apos;s Courses</span>
+          </button>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '8px' }}>
             {viewTab === 'my-list'
               ? 'Private + your professors + ones you added'
-              : 'All public professors — add any to your list'}
+              : viewTab === 'public'
+                ? 'Public professors + shared Master’s courses'
+                : 'Your Regular Master’s courses — share with Public button'}
           </span>
         </div>
 
-        {/* Filter & Search Bar */}
-        <FilterBar
-          filters={filters}
-          onChangeFilters={setFilters}
-          countries={countries}
-          totalFilteredProfessors={totalFilteredProfessors}
-        />
+        {/* Master's Courses — personal management */}
+        {viewTab === 'masters' && (
+          <MastersCoursesSection
+            courses={data.mastersCourses || []}
+            me={me}
+            mode="manage"
+            onSave={handleSaveMastersCourse}
+            onDelete={handleDeleteMastersCourse}
+            onToggleVisibility={handleToggleMastersVisibility}
+          />
+        )}
 
-        {/* Topology: Country → Universities */}
-        {groupedByCountry.length > 0 ? (
+        {/* Filter & Search Bar — professor views only */}
+        {viewTab !== 'masters' && (
+          <FilterBar
+            filters={filters}
+            onChangeFilters={setFilters}
+            countries={countries}
+            totalFilteredProfessors={totalFilteredProfessors}
+          />
+        )}
+
+        {/* Public Master's courses section (on Public tab) */}
+        {viewTab === 'public' && (
+          <MastersCoursesSection
+            courses={data.mastersCourses || []}
+            me={me}
+            mode="public"
+            onSave={handleSaveMastersCourse}
+            onDelete={handleDeleteMastersCourse}
+            onToggleVisibility={handleToggleMastersVisibility}
+          />
+        )}
+
+        {/* Topology: Country → Universities (hidden on masters tab) */}
+        {viewTab !== 'masters' && (groupedByCountry.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {groupedByCountry.map(([country, unis]) => {
               const progress = countryProgress(unis);
@@ -770,7 +842,7 @@ export default function HomePage() {
               </button>
             )}
           </div>
-        )}
+        ))}
       </main>
 
       {/* MODALS */}

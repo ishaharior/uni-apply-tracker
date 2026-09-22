@@ -85,13 +85,29 @@ export interface University {
   createdAt: string;
 }
 
+export interface MastersCourse {
+  id: string;
+  universityName: string;
+  departmentName: string;
+  ieltsReq: string;
+  lastDate: string;
+  applicationLink: string;
+  visibility: 'public' | 'private';
+  ownerId?: string;
+  ownerName?: string;
+  isMine?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type ActivityAction =
   | 'added_university'
   | 'added_department'
   | 'added_professor'
   | 'updated_outreach'
   | 'deleted_entity'
-  | 'toggled_list';
+  | 'toggled_list'
+  | 'masters_course';
 
 export interface ActivityLog {
   id: string;
@@ -109,6 +125,7 @@ export interface ActivityLog {
 
 export interface AppData {
   universities: University[];
+  mastersCourses: MastersCourse[];
   me: User;
   activityLogs: ActivityLog[];
   version: string;
