@@ -16,12 +16,13 @@ import {
 } from '@/components/EntityModals';
 import EmailTemplatesModal from '@/components/EmailTemplatesModal';
 import ActivityModal from '@/components/ActivityModal';
-import { Plus, Building2, RefreshCw } from 'lucide-react';
+import { Plus, Building2, RefreshCw, List, Globe2 } from 'lucide-react';
 
 export default function HomePage() {
   const router = useRouter();
   const [data, setData] = useState<AppData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [viewTab, setViewTab] = useState<'my-list' | 'public'>('my-list');
 
   // Filter State
   const [filters, setFilters] = useState<FilterOptions>({
@@ -30,6 +31,7 @@ export default function HomePage() {
     statusFilter: 'all',
     needsFollowUp: false,
     degreeLevel: 'all',
+    visibility: 'all',
   });
 
   // Modal States
@@ -138,6 +140,14 @@ export default function HomePage() {
             const deptMatchesQuery = q === '' || dept.name.toLowerCase().includes(q);
 
             const matchingProfessors = dept.professors.filter((prof) => {
+              // Tab scope: My List = private + own + added; Public = all public
+              if (viewTab === 'my-list' && !(prof.onMyList || prof.ownerId === data.me.id)) {
+                return false;
+              }
+              if (viewTab === 'public' && prof.visibility !== 'public') {
+                return false;
+              }
+
               const profMatchesQuery =
                 q === '' ||
                 uniMatchesQuery ||
@@ -148,6 +158,14 @@ export default function HomePage() {
                 prof.researchAreas.some((area) => area.toLowerCase().includes(q));
 
               if (!profMatchesQuery) return false;
+
+              // Visibility filter (server already hides others' private profs)
+              if (filters.visibility === 'public' && prof.visibility !== 'public') {
+                return false;
+              }
+              if (filters.visibility === 'private' && prof.visibility !== 'private') {
+                return false;
+              }
 
               // Status filter — my status only
               const myStatus = prof.myOutreach?.status || 'not_contacted';
@@ -186,7 +204,21 @@ export default function HomePage() {
         };
       })
       .filter(Boolean) as University[];
-  }, [data, filters]);
+  }, [data, filters, viewTab]);
+
+  // Personal stats always reflect My List only
+  const myListUniversities = useMemo(() => {
+    if (!data) return [];
+    return data.universities
+      .map((uni) => ({
+        ...uni,
+        departments: uni.departments.map((dept) => ({
+          ...dept,
+          professors: dept.professors.filter((p) => p.onMyList || p.ownerId === data.me.id),
+        })),
+      }))
+      .filter((uni) => uni.departments.some((d) => d.professors.length > 0));
+  }, [data]);
 
   // Topology: group filtered universities under Country sections
   const groupedByCountry = useMemo(() => {
@@ -329,6 +361,39 @@ export default function HomePage() {
     }
   };
 
+  const handleToggleProfessorVisibility = async (professor: Professor) => {
+    const makingPrivate = professor.visibility !== 'private';
+    const message = makingPrivate
+      ? `Make "${professor.name}" private? Other users will no longer see this professor.`
+      : `Make "${professor.name}" public? All users will be able to see this professor.`;
+    if (!confirm(message)) return;
+
+    const dept = data?.universities
+      .flatMap((u) => u.departments)
+      .find((d) => d.id === professor.departmentId);
+    if (!dept) return;
+
+    await dispatchAction('UPDATE_PROFESSOR', {
+      universityId: dept.universityId,
+      departmentId: professor.departmentId,
+      professorId: professor.id,
+      updates: { visibility: makingPrivate ? 'private' : 'public' },
+    });
+  };
+
+  const handleToggleList = async (professor: Professor) => {
+    if (!data) return;
+    if (professor.ownerId === data.me.id) return;
+
+    if (professor.onMyList) {
+      if (confirm(`Remove "${professor.name}" from your list?`)) {
+        await dispatchAction('REMOVE_FROM_LIST', { professorId: professor.id });
+      }
+    } else {
+      await dispatchAction('ADD_TO_LIST', { professorId: professor.id });
+    }
+  };
+
   const handleExportData = () => {
     if (!data) return;
     const legacy = {
@@ -435,8 +500,66 @@ export default function HomePage() {
 
       {/* Main Container */}
       <main style={{ maxWidth: '1440px', margin: '0 auto', padding: '28px 24px 60px', width: '100%', flex: 1 }}>
-        {/* Personal Progress Dashboard — private to me */}
-        <StatsDashboard universities={data.universities} me={me} />
+        {/* Personal Progress Dashboard — private to me (My List only) */}
+        <StatsDashboard universities={myListUniversities} me={me} />
+
+        {/* View tabs: My List / Public catalog */}
+        <div
+          className="glass-panel"
+          style={{
+            display: 'flex',
+            gap: '8px',
+            padding: '10px 12px',
+            marginBottom: '16px',
+            alignItems: 'center',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setViewTab('my-list')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '7px',
+              height: '40px',
+              padding: '0 16px',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              background: viewTab === 'my-list' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+              border: `1px solid ${viewTab === 'my-list' ? '#818cf8' : 'var(--border-subtle)'}`,
+              color: viewTab === 'my-list' ? '#c7d2fe' : 'var(--text-secondary)',
+            }}
+          >
+            <List size={16} />
+            <span>My List</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewTab('public')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '7px',
+              height: '40px',
+              padding: '0 16px',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.82rem',
+              fontWeight: 700,
+              background: viewTab === 'public' ? 'rgba(56, 189, 248, 0.18)' : 'rgba(255, 255, 255, 0.04)',
+              border: `1px solid ${viewTab === 'public' ? '#38bdf8' : 'var(--border-subtle)'}`,
+              color: viewTab === 'public' ? '#bae6fd' : 'var(--text-secondary)',
+            }}
+          >
+            <Globe2 size={16} />
+            <span>Public Professors</span>
+          </button>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '8px' }}>
+            {viewTab === 'my-list'
+              ? 'Private + your professors + ones you added'
+              : 'All public professors — add any to your list'}
+          </span>
+        </div>
 
         {/* Filter & Search Bar */}
         <FilterBar
@@ -603,6 +726,8 @@ export default function HomePage() {
                           });
                         }}
                         onDeleteProfessor={handleDeleteProfessor}
+                        onToggleProfessorVisibility={handleToggleProfessorVisibility}
+                        onToggleProfessorList={handleToggleList}
                       />
                     ))}
                   </div>
@@ -621,18 +746,29 @@ export default function HomePage() {
           >
             <Building2 size={44} color="var(--text-muted)" style={{ margin: '0 auto 16px' }} />
             <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>
-              No matching universities or professors found
+              {viewTab === 'my-list'
+                ? 'No professors on your list yet'
+                : 'No matching public professors found'}
             </h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', maxWidth: '420px', margin: '0 auto 20px' }}>
-              Try clearing your search criteria, adjusting status filters, or add a new university to start tracking.
+              {viewTab === 'my-list'
+                ? 'Open the Public Professors tab to browse the shared catalog and add professors to your list.'
+                : 'Try clearing your search criteria, or add a new university to start tracking.'}
             </p>
-            <button
-              className="btn btn-primary"
-              onClick={() => setUniModal({ isOpen: true, editingUniversity: null })}
-            >
-              <Plus size={16} />
-              <span>Add First University</span>
-            </button>
+            {viewTab === 'my-list' ? (
+              <button className="btn btn-primary" onClick={() => setViewTab('public')}>
+                <Globe2 size={16} />
+                <span>Browse Public Professors</span>
+              </button>
+            ) : (
+              <button
+                className="btn btn-primary"
+                onClick={() => setUniModal({ isOpen: true, editingUniversity: null })}
+              >
+                <Plus size={16} />
+                <span>Add First University</span>
+              </button>
+            )}
           </div>
         )}
       </main>

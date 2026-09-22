@@ -20,6 +20,8 @@ model User {
   createdAt    DateTime       @default(now())
   outreach     OutreachRecord[]
   activityLogs ActivityLog[]
+  professors   Professor[]
+  bookmarks    ProfessorBookmark[]
 }
 
 model University {
@@ -64,10 +66,27 @@ model Professor {
   researchAreas     String[]         @default([])
   acceptingStudents String           @default("unknown")
   notes             String?
+  visibility        String           @default("public")
+  ownerId           String?
+  owner             User?            @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   createdAt         DateTime         @default(now())
   outreach          OutreachRecord[]
+  bookmarks         ProfessorBookmark[]
 
   @@index([departmentId])
+  @@index([ownerId])
+}
+
+model ProfessorBookmark {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  professorId String
+  professor   Professor @relation(fields: [professorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, professorId])
+  @@index([professorId])
 }
 
 model OutreachRecord {

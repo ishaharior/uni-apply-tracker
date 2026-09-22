@@ -61,11 +61,27 @@ export async function syncUsers(
 
 export async function importDataset(
   prisma: PrismaClient,
-  data: LegacyDataset
+  data: LegacyDataset,
+  options?: { ownerId?: string; ownerUsername?: string }
 ): Promise<void> {
   const userIdMap = await syncUsers(prisma, data.friends ?? {});
 
+  const resolveOwner = (username?: string): string | null => {
+    if (username) {
+      const byName = userIdMap.get(username);
+      if (byName) return byName;
+    }
+    if (options?.ownerUsername) {
+      const byOpt = userIdMap.get(options.ownerUsername);
+      if (byOpt) return byOpt;
+    }
+    if (options?.ownerId) return options.ownerId;
+    const first = userIdMap.values().next();
+    return first.done ? null : first.value;
+  };
+
   await prisma.activityLog.deleteMany({});
+  await prisma.professorBookmark.deleteMany({});
   await prisma.university.deleteMany({});
 
   let baseTime = Date.now() - (data.universities.length + 1) * 60_000;
@@ -112,6 +128,8 @@ export async function importDataset(
                   researchAreas: prof.researchAreas ?? [],
                   acceptingStudents: prof.acceptingStudents ?? 'unknown',
                   notes: prof.notes || null,
+                  visibility: prof.visibility === 'private' ? 'private' : 'public',
+                  ownerId: resolveOwner(prof.ownerUsername),
                   createdAt: new Date(deptTime.getTime() + 1 + profIdx),
                   outreach: {
                     create: Object.entries(prof.outreach ?? {})

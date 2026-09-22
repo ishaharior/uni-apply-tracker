@@ -29,6 +29,8 @@ interface UniversityCardProps {
   onDeleteDepartment: (universityId: string, departmentId: string) => void;
   onEditProfessor: (professor: Professor) => void;
   onDeleteProfessor: (universityId: string, departmentId: string, professorId: string) => void;
+  onToggleProfessorVisibility: (professor: Professor) => void;
+  onToggleProfessorList: (professor: Professor) => void;
 }
 
 export default function UniversityCard({
@@ -44,6 +46,8 @@ export default function UniversityCard({
   onDeleteDepartment,
   onEditProfessor,
   onDeleteProfessor,
+  onToggleProfessorVisibility,
+  onToggleProfessorList,
 }: UniversityCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
 
@@ -296,6 +300,8 @@ export default function UniversityCard({
                 onOpenStatusModal={onOpenStatusModal}
                 onEditProfessor={onEditProfessor}
                 onDeleteProfessor={(profId) => onDeleteProfessor(university.id, dept.id, profId)}
+                onToggleVisibility={onToggleProfessorVisibility}
+                onToggleList={onToggleProfessorList}
                 onEditDepartment={onEditDepartment}
                 onDeleteDepartment={(deptId) => onDeleteDepartment(university.id, deptId)}
               />

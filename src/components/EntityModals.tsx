@@ -525,6 +525,7 @@ export function ProfessorModal({
   const [scholarUrl, setScholarUrl] = useState('');
   const [researchAreas, setResearchAreas] = useState('');
   const [acceptingStudents, setAcceptingStudents] = useState<'yes' | 'no' | 'unknown' | 'maybe'>('unknown');
+  const [visibility, setVisibility] = useState<'public' | 'private'>('public');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -541,6 +542,7 @@ export function ProfessorModal({
           : ''
       );
       setAcceptingStudents(editingProfessor.acceptingStudents || 'unknown');
+      setVisibility(editingProfessor.visibility === 'private' ? 'private' : 'public');
       setNotes(editingProfessor.notes || '');
     } else {
       setName('');
@@ -550,6 +552,7 @@ export function ProfessorModal({
       setScholarUrl('');
       setResearchAreas('Machine Learning, Deep Learning');
       setAcceptingStudents('yes');
+      setVisibility('public');
       setNotes('');
     }
   }, [editingProfessor, isOpen]);
@@ -569,6 +572,7 @@ export function ProfessorModal({
         scholarUrl: scholarUrl.trim() || undefined,
         researchAreas: researchAreas.split(',').map((s) => s.trim()).filter(Boolean),
         acceptingStudents,
+        visibility,
         notes: notes.trim() || undefined,
       });
       onClose();
@@ -734,6 +738,20 @@ export function ProfessorModal({
                 onChange={(e) => setWebsiteUrl(e.target.value)}
               />
             </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '5px' }}>
+              Visibility
+            </label>
+            <select
+              className="input-field"
+              value={visibility}
+              onChange={(e) => setVisibility(e.target.value as 'public' | 'private')}
+            >
+              <option value="public">🌐 Public — all users can see this professor</option>
+              <option value="private">🔒 Private — only you can see this professor</option>
+            </select>
           </div>
 
           <div>

@@ -234,7 +234,10 @@ export async function POST(req: NextRequest) {
             researchAreas: areas,
             acceptingStudents: professor?.acceptingStudents || 'unknown',
             notes: String(professor?.notes ?? '').trim() || null,
+            visibility: professor?.visibility === 'private' ? 'private' : 'public',
+            ownerId: user.id,
           },
+          include: { owner: { select: { name: true } } },
         });
         await logActivity(
           user.id,
@@ -264,6 +267,13 @@ export async function POST(req: NextRequest) {
         if (!prof) {
           return NextResponse.json({ success: false, error: 'Professor not found' }, { status: 404 });
         }
+
+        const isOwner = prof.ownerId === user.id;
+        const isPublic = prof.visibility !== 'private';
+        if (!isPublic && !isOwner) {
+          return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+        }
+
         let researchAreas: string[] | undefined;
         if (updates.researchAreas !== undefined) {
           researchAreas =
@@ -271,6 +281,15 @@ export async function POST(req: NextRequest) {
               ? updates.researchAreas.split(',').map((s: string) => s.trim()).filter(Boolean)
               : updates.researchAreas;
         }
+
+        let visibility: string | undefined;
+        if (updates.visibility !== undefined) {
+          if (!isOwner) {
+            return NextResponse.json({ success: false, error: 'Only the owner can change visibility' }, { status: 403 });
+          }
+          visibility = updates.visibility === 'private' ? 'private' : 'public';
+        }
+
         await prisma.professor.update({
           where: { id: professorId },
           data: {
@@ -284,6 +303,7 @@ export async function POST(req: NextRequest) {
               ? { acceptingStudents: updates.acceptingStudents }
               : {}),
             ...(updates.notes !== undefined ? { notes: updates.notes || null } : {}),
+            ...(visibility !== undefined ? { visibility } : {}),
           },
         });
         const appData = await getAppData(user);
@@ -304,13 +324,67 @@ export async function POST(req: NextRequest) {
         if (!prof) {
           return NextResponse.json({ success: false, error: 'Professor not found' }, { status: 404 });
         }
+        if (prof.ownerId !== user.id) {
+          return NextResponse.json({ success: false, error: 'Only the owner can delete this professor' }, { status: 403 });
+        }
         await prisma.professor.delete({ where: { id: professorId } });
         const appData = await getAppData(user);
         return NextResponse.json({ success: true, data: appData });
       }
 
+      case 'ADD_TO_LIST': {
+        const { professorId } = payload ?? {};
+        const prof = await prisma.professor.findUnique({ where: { id: professorId } });
+        if (!prof) {
+          return NextResponse.json({ success: false, error: 'Professor not found' }, { status: 404 });
+        }
+        if (prof.visibility !== 'public' && prof.ownerId !== user.id) {
+          return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+        }
+        if (prof.ownerId !== user.id) {
+          await prisma.professorBookmark.upsert({
+            where: { userId_professorId: { userId: user.id, professorId: prof.id } },
+            create: { userId: user.id, professorId: prof.id },
+            update: {},
+          });
+          await logActivity(
+            user.id,
+            'toggled_list',
+            `${user.name} added ${prof.name} to their list`,
+            { professorName: prof.name }
+          );
+        }
+        const appData = await getAppData(user);
+        return NextResponse.json({ success: true, data: appData });
+      }
+
+      case 'REMOVE_FROM_LIST': {
+        const { professorId } = payload ?? {};
+        const prof = await prisma.professor.findUnique({ where: { id: professorId } });
+        if (!prof) {
+          return NextResponse.json({ success: false, error: 'Professor not found' }, { status: 404 });
+        }
+        if (prof.ownerId === user.id) {
+          return NextResponse.json(
+            { success: false, error: 'Cannot remove your own professor from your list' },
+            { status: 400 }
+          );
+        }
+        await prisma.professorBookmark.deleteMany({
+          where: { userId: user.id, professorId: prof.id },
+        });
+        await logActivity(
+          user.id,
+          'toggled_list',
+          `${user.name} removed ${prof.name} from their list`,
+          { professorName: prof.name }
+        );
+        const appData = await getAppData(user);
+        return NextResponse.json({ success: true, data: appData });
+      }
+
       case 'RESET_DATA': {
-        await importDataset(prisma, INITIAL_DATASET);
+        await importDataset(prisma, INITIAL_DATASET, { ownerId: user.id });
         const appData = await getAppData(user);
         return NextResponse.json({ success: true, data: appData });
       }
@@ -343,7 +417,7 @@ export async function POST(req: NextRequest) {
           universities: payload.universities,
           activityLogs: Array.isArray(payload.activityLogs) ? payload.activityLogs : [],
         };
-        await importDataset(prisma, dataset);
+        await importDataset(prisma, dataset, { ownerId: user.id });
         const appData = await getAppData(user);
         return NextResponse.json({ success: true, data: appData });
       }

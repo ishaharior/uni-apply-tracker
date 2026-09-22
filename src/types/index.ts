@@ -44,6 +44,10 @@ export interface Professor {
   researchAreas: string[];
   acceptingStudents: 'yes' | 'no' | 'unknown' | 'maybe';
   notes?: string;
+  visibility: 'public' | 'private';
+  ownerId?: string;
+  ownerName?: string;
+  onMyList?: boolean;
   myOutreach?: OutreachRecord | null;
   createdAt: string;
 }
@@ -86,7 +90,8 @@ export type ActivityAction =
   | 'added_department'
   | 'added_professor'
   | 'updated_outreach'
-  | 'deleted_entity';
+  | 'deleted_entity'
+  | 'toggled_list';
 
 export interface ActivityLog {
   id: string;
@@ -115,6 +120,7 @@ export interface FilterOptions {
   statusFilter: OutreachStatusType | 'all';
   needsFollowUp: boolean;
   degreeLevel: string;
+  visibility: 'all' | 'public' | 'private';
 }
 
 /* -------------------------------------------------------------
@@ -141,8 +147,10 @@ export interface LegacyOutreachRecord {
   lastUpdated: string;
 }
 
-export interface LegacyProfessor extends Omit<Professor, 'myOutreach'> {
+export interface LegacyProfessor extends Omit<Professor, 'myOutreach' | 'visibility' | 'ownerId' | 'ownerName'> {
   outreach?: Record<string, LegacyOutreachRecord>;
+  visibility?: 'public' | 'private';
+  ownerUsername?: string;
 }
 
 export interface LegacyDepartment extends Omit<Department, 'professors'> {

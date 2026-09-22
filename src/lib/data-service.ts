@@ -31,8 +31,13 @@ export async function getAppData(user: User | UserRow): Promise<AppData> {
           orderBy: { createdAt: 'asc' },
           include: {
             professors: {
+              where: { OR: [{ visibility: 'public' }, { ownerId: user.id }] },
               orderBy: { createdAt: 'asc' },
-              include: { outreach: { where: { userId: user.id } } },
+              include: {
+                outreach: { where: { userId: user.id } },
+                owner: { select: { name: true } },
+                bookmarks: { where: { userId: user.id }, select: { id: true } },
+              },
             },
           },
         },
@@ -77,6 +82,10 @@ export async function getAppData(user: User | UserRow): Promise<AppData> {
           researchAreas: prof.researchAreas,
           acceptingStudents: prof.acceptingStudents as Professor['acceptingStudents'],
           notes: prof.notes ?? undefined,
+          visibility: (prof.visibility === 'private' ? 'private' : 'public') as Professor['visibility'],
+          ownerId: prof.ownerId ?? undefined,
+          ownerName: prof.owner?.name,
+          onMyList: prof.ownerId === user.id || prof.bookmarks.length > 0,
           createdAt: prof.createdAt.toISOString(),
           myOutreach: rec
             ? ({

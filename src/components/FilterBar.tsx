@@ -25,6 +25,7 @@ export default function FilterBar({
     filters.searchQuery !== '' ||
     filters.country !== 'all' ||
     filters.statusFilter !== 'all' ||
+    filters.visibility !== 'all' ||
     filters.needsFollowUp;
 
   const resetFilters = () => {
@@ -34,6 +35,7 @@ export default function FilterBar({
       statusFilter: 'all',
       needsFollowUp: false,
       degreeLevel: 'all',
+      visibility: 'all',
     });
   };
 
@@ -95,6 +97,19 @@ export default function FilterBar({
                 {c}
               </option>
             ))}
+          </select>
+
+          {/* Visibility Filter */}
+          <select
+            className="input-field"
+            value={filters.visibility}
+            onChange={(e) => update({ visibility: e.target.value as FilterOptions['visibility'] })}
+            style={{ width: 'auto', height: '40px', paddingRight: '28px' }}
+            title="Filter professors by visibility"
+          >
+            <option value="all">👥 All Visibility</option>
+            <option value="public">🌐 Public</option>
+            <option value="private">🔒 My Private</option>
           </select>
 
           {/* Status Filter (my statuses only) */}

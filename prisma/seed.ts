@@ -17,7 +17,7 @@ async function main() {
         `${Object.keys(dataset.friends).length} users, ` +
         `${dataset.activityLogs.length} activity logs...`
     );
-    await importDataset(prisma, dataset);
+    await importDataset(prisma, dataset, { ownerUsername: 'shawon' });
 
     const [users, unis, depts, profs, outreach, logs] = await Promise.all([
       prisma.user.count(),

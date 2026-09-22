@@ -12,6 +12,8 @@ import {
   Trash2,
   PlusCircle,
   MessageSquare,
+  Globe,
+  Lock,
 } from 'lucide-react';
 import { getStatusMeta, formatDate } from '@/lib/utils';
 
@@ -23,6 +25,8 @@ interface ProfessorCardProps {
   onOpenStatusModal: (professor: Professor) => void;
   onEditProfessor: (professor: Professor) => void;
   onDeleteProfessor: (professorId: string) => void;
+  onToggleVisibility: (professor: Professor) => void;
+  onToggleList: (professor: Professor) => void;
 }
 
 export default function ProfessorCard({
@@ -31,8 +35,13 @@ export default function ProfessorCard({
   onOpenStatusModal,
   onEditProfessor,
   onDeleteProfessor,
+  onToggleVisibility,
+  onToggleList,
 }: ProfessorCardProps) {
   const [copiedEmail, setCopiedEmail] = useState(false);
+  const isOwner = professor.ownerId === me.id;
+  const isPrivate = professor.visibility === 'private';
+  const isOnList = professor.onMyList || isOwner;
 
   const copyEmail = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -94,7 +103,107 @@ export default function ProfessorCard({
         </div>
 
         {/* Action icons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+          {isOwner ? (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '5px 10px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                borderRadius: 'var(--radius-full)',
+                background: 'rgba(168, 85, 247, 0.12)',
+                color: '#d8b4fe',
+                border: '1px solid rgba(168, 85, 247, 0.35)',
+              }}
+              title="You added this professor"
+            >
+              <PlusCircle size={13} />
+              <span>Your list</span>
+            </span>
+          ) : isOnList ? (
+            <button
+              onClick={() => onToggleList(professor)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '5px 10px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                borderRadius: 'var(--radius-full)',
+                background: 'rgba(16, 185, 129, 0.12)',
+                color: '#34d399',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+              }}
+              title="On your list — click to remove"
+            >
+              <Check size={13} />
+              <span>On my list</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => onToggleList(professor)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '5px 10px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                borderRadius: 'var(--radius-full)',
+                background: 'rgba(99, 102, 241, 0.15)',
+                color: '#a5b4fc',
+                border: '1px solid rgba(99, 102, 241, 0.4)',
+              }}
+              title="Add this public professor to your list"
+            >
+              <PlusCircle size={13} />
+              <span>Add to list</span>
+            </button>
+          )}
+          {isOwner ? (
+            <button
+              onClick={() => onToggleVisibility(professor)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '5px 10px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                borderRadius: 'var(--radius-full)',
+                background: isPrivate ? 'rgba(244, 63, 94, 0.12)' : 'rgba(56, 189, 248, 0.12)',
+                color: isPrivate ? '#fda4af' : '#7dd3fc',
+                border: `1px solid ${isPrivate ? 'rgba(244, 63, 94, 0.35)' : 'rgba(56, 189, 248, 0.35)'}`,
+              }}
+              title={isPrivate ? 'Private — only you can see this professor' : 'Public — all users can see this professor'}
+            >
+              {isPrivate ? <Lock size={13} /> : <Globe size={13} />}
+              <span>{isPrivate ? 'Private' : 'Public'}</span>
+            </button>
+          ) : (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '5px 10px',
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                borderRadius: 'var(--radius-full)',
+                background: 'rgba(56, 189, 248, 0.12)',
+                color: '#7dd3fc',
+                border: '1px solid rgba(56, 189, 248, 0.35)',
+              }}
+              title="Public — visible to all users"
+            >
+              <Globe size={13} />
+              <span>Public</span>
+            </span>
+          )}
           <button
             onClick={() => onEditProfessor(professor)}
             style={{
@@ -108,19 +217,21 @@ export default function ProfessorCard({
           >
             <Edit3 size={15} />
           </button>
-          <button
-            onClick={() => onDeleteProfessor(professor.id)}
-            style={{
-              padding: '6px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'rgba(239, 68, 68, 0.08)',
-              color: '#f87171',
-              border: '1px solid rgba(239, 68, 68, 0.2)',
-            }}
-            title="Delete Professor"
-          >
-            <Trash2 size={15} />
-          </button>
+          {isOwner && (
+            <button
+              onClick={() => onDeleteProfessor(professor.id)}
+              style={{
+                padding: '6px',
+                borderRadius: 'var(--radius-sm)',
+                background: 'rgba(239, 68, 68, 0.08)',
+                color: '#f87171',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+              }}
+              title="Delete Professor"
+            >
+              <Trash2 size={15} />
+            </button>
+          )}
         </div>
       </div>
 
