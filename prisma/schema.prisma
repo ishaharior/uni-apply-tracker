@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String         @id @default(cuid())
+  username     String         @unique
+  name         String
+  passwordHash String
+  avatar       String         @default("U")
+  color        String         @default("#94a3b8")
+  glowColor    String         @default("rgba(148, 163, 184, 0.35)")
+  accentBg     String         @default("rgba(148, 163, 184, 0.12)")
+  role         String         @default("applicant")
+  createdAt    DateTime       @default(now())
+  outreach     OutreachRecord[]
+  activityLogs ActivityLog[]
+}
+
+model University {
+  id          String       @id @default(cuid())
+  name        String
+  country     String
+  city        String       @default("")
+  ranking     Int?
+  portalUrl   String?
+  websiteUrl  String?
+  notes       String?
+  createdAt   DateTime     @default(now())
+  departments Department[]
+
+  @@index([country])
+}
+
+model Department {
+  id           String     @id @default(cuid())
+  universityId String
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  name         String
+  degreeLevel  String     @default("PhD")
+  websiteUrl   String?
+  deadlines    Json?
+  requirements Json?
+  createdAt    DateTime   @default(now())
+  professors   Professor[]
+
+  @@index([universityId])
+}
+
+model Professor {
+  id                String           @id @default(cuid())
+  departmentId      String
+  department        Department       @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  name              String
+  title             String           @default("Professor")
+  email             String           @default("")
+  websiteUrl        String?
+  scholarUrl        String?
+  researchAreas     String[]         @default([])
+  acceptingStudents String           @default("unknown")
+  notes             String?
+  createdAt         DateTime         @default(now())
+  outreach          OutreachRecord[]
+
+  @@index([departmentId])
+}
+
+model OutreachRecord {
+  id           String    @id @default(cuid())
+  professorId  String
+  professor    Professor @relation(fields: [professorId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status       String    @default("not_contacted")
+  dateEmailed  String?
+  responseDate String?
+  followUpDate String?
+  notes        String?
+  emailSubject String?
+  lastUpdated  DateTime  @default(now())
+
+  @@unique([professorId, userId])
+  @@index([userId])
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  timestamp   DateTime @default(now())
+  action      String
+  description String
+  metadata    Json?
+
+  @@index([userId])
+}
