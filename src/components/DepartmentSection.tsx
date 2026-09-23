@@ -2,23 +2,16 @@
 
 import React from 'react';
 import { Department, Professor, User } from '@/types';
-import {
-  GraduationCap,
-  Calendar,
-  FileCheck,
-  ExternalLink,
-  Plus,
-  Edit2,
-  Trash2,
-  Users,
-} from 'lucide-react';
-import ProfessorCard from './ProfessorCard';
+import { Calendar, FileCheck, ExternalLink, Plus, Edit2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import ProfessorRow from './ProfessorCard';
 
 interface DepartmentSectionProps {
   department: Department;
   universityId: string;
   universityName: string;
   me: User;
+  expanded: boolean;
+  onToggleExpand: () => void;
   onOpenAddProfessor: (universityId: string, departmentId: string) => void;
   onOpenStatusModal: (professor: Professor) => void;
   onEditProfessor: (professor: Professor) => void;
@@ -32,8 +25,9 @@ interface DepartmentSectionProps {
 export default function DepartmentSection({
   department,
   universityId,
-  universityName,
   me,
+  expanded,
+  onToggleExpand,
   onOpenAddProfessor,
   onOpenStatusModal,
   onEditProfessor,
@@ -43,173 +37,160 @@ export default function DepartmentSection({
   onEditDepartment,
   onDeleteDepartment,
 }: DepartmentSectionProps) {
+  const metaBits: string[] = [];
+  if (department.deadlines?.fall) metaBits.push(`Fall: ${department.deadlines.fall}`);
+  if (department.requirements?.gre) metaBits.push(`GRE: ${department.requirements.gre}`);
+
   return (
-    <div
-      style={{
-        background: 'rgba(10, 16, 28, 0.75)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '20px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '16px',
-      }}
-    >
-      {/* Department Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <GraduationCap size={18} color="#818cf8" />
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f1f5f9', margin: 0 }}>
-              {department.name}
-            </h3>
-            <span
+    <div className="xl-wrap" style={{ margin: '0 0 8px', borderRadius: 'var(--radius-sm)' }}>
+      {/* Dept toolbar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '5px 10px',
+          background: '#0b0b0f',
+          borderBottom: expanded ? '1px solid var(--border-grid)' : 'none',
+          flexWrap: 'wrap',
+        }}
+      >
+        <button
+          type="button"
+          className="xl-icon-btn"
+          onClick={onToggleExpand}
+          title={expanded ? 'Collapse' : 'Expand'}
+          style={{ width: 22, height: 22 }}
+        >
+          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </button>
+        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#c7d2fe' }}>{department.name}</span>
+        <span
+          className="xl-chip"
+          style={{
+            color: '#a5b4fc',
+            background: 'rgba(99,102,241,0.1)',
+            borderColor: 'rgba(99,102,241,0.25)',
+          }}
+        >
+          {department.degreeLevel}
+        </span>
+        <span className="xl-cell-muted">{department.professors.length} profs</span>
+        {metaBits.length > 0 && (
+          <span className="xl-cell-muted" style={{ display: 'inline-flex', gap: 10 }}>
+            {department.deadlines?.fall && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                <Calendar size={11} color="#38bdf8" />
+                {department.deadlines.fall}
+              </span>
+            )}
+            {department.requirements?.gre && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                <FileCheck size={11} color="#10b981" />
+                {department.requirements.gre}
+              </span>
+            )}
+            {department.requirements?.feeWaiverAvailable && (
+              <span style={{ color: '#34d399' }}>✓ Fee waiver</span>
+            )}
+          </span>
+        )}
+        {department.websiteUrl && (
+          <a
+            href={department.websiteUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="xl-icon-btn"
+            title="Dept website"
+          >
+            <ExternalLink size={13} />
+          </a>
+        )}
+        <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: 4 }}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ fontSize: '0.72rem', padding: '3px 8px' }}
+            onClick={() => onOpenAddProfessor(universityId, department.id)}
+          >
+            <Plus size={12} />
+            Professor
+          </button>
+          <button
+            type="button"
+            className="xl-icon-btn"
+            onClick={() => onEditDepartment(department)}
+            title="Edit department"
+          >
+            <Edit2 size={13} />
+          </button>
+          <button
+            type="button"
+            className="xl-icon-btn danger"
+            onClick={() => onDeleteDepartment(department.id)}
+            title="Delete department"
+          >
+            <Trash2 size={13} />
+          </button>
+        </span>
+      </div>
+
+      {expanded && (
+        <div style={{ overflowX: 'auto' }}>
+          {department.professors.length > 0 ? (
+            <table className="xl-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '16%' }}>Professor</th>
+                  <th style={{ width: '11%' }}>Title</th>
+                  <th style={{ width: '7%' }}>Accepting</th>
+                  <th style={{ width: '16%' }}>Research</th>
+                  <th style={{ width: '15%' }}>Email</th>
+                  <th style={{ width: '7%' }}>Links</th>
+                  <th style={{ width: '10%' }}>My Status</th>
+                  <th style={{ width: '7%' }}>List</th>
+                  <th style={{ width: '5%' }}>Vis</th>
+                  <th style={{ width: '6%' }} />
+                </tr>
+              </thead>
+              <tbody>
+                {department.professors.map((prof) => (
+                  <ProfessorRow
+                    key={prof.id}
+                    professor={prof}
+                    me={me}
+                    onOpenStatusModal={onOpenStatusModal}
+                    onEditProfessor={onEditProfessor}
+                    onDeleteProfessor={onDeleteProfessor}
+                    onToggleVisibility={onToggleVisibility}
+                    onToggleList={onToggleList}
+                  />
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div
               style={{
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                padding: '3px 10px',
-                borderRadius: 'var(--radius-full)',
-                background: 'rgba(99, 102, 241, 0.18)',
-                color: '#a5b4fc',
-                border: '1px solid rgba(99, 102, 241, 0.35)',
+                padding: '14px',
+                textAlign: 'center',
+                fontSize: '0.78rem',
+                color: 'var(--text-muted)',
               }}
             >
-              {department.degreeLevel}
-            </span>
-          </div>
-
-          {/* Department Meta Row */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center', marginTop: '6px' }}>
-            {department.deadlines?.fall && (
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                <Calendar size={13} color="#38bdf8" />
-                <span>Fall Deadline: <strong style={{ color: '#e2e8f0' }}>{department.deadlines.fall}</strong></span>
-              </span>
-            )}
-
-            {department.requirements?.gre && (
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                <FileCheck size={13} color="#10b981" />
-                <span>GRE: {department.requirements.gre}</span>
-              </span>
-            )}
-
-            {department.requirements?.feeWaiverAvailable && (
-              <span
-                style={{
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
-                  color: '#34d399',
-                  background: 'rgba(16, 185, 129, 0.1)',
-                  padding: '2px 8px',
-                  borderRadius: 'var(--radius-full)',
-                  border: '1px solid rgba(16, 185, 129, 0.25)',
-                }}
-                title={department.requirements.feeWaiverNotes || 'Fee waivers available for applicants'}
+              No professors yet.{' '}
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ fontSize: '0.72rem', padding: '3px 8px', marginLeft: 6 }}
+                onClick={() => onOpenAddProfessor(universityId, department.id)}
               >
-                ✓ Fee Waiver Available
-              </span>
-            )}
-
-            {department.websiteUrl && (
-              <a
-                href={department.websiteUrl}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  fontSize: '0.78rem',
-                  color: '#818cf8',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-              >
-                <span>Dept Website</span>
-                <ExternalLink size={12} />
-              </a>
-            )}
-          </div>
+                <Plus size={12} />
+                Add first
+              </button>
+            </div>
+          )}
         </div>
-
-        {/* Header Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button
-            className="btn btn-primary"
-            onClick={() => onOpenAddProfessor(universityId, department.id)}
-            style={{ fontSize: '0.78rem', padding: '6px 12px' }}
-          >
-            <Plus size={14} />
-            <span>Add Professor</span>
-          </button>
-          <button
-            onClick={() => onEditDepartment(department)}
-            style={{
-              padding: '6px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'rgba(255, 255, 255, 0.04)',
-              color: 'var(--text-muted)',
-            }}
-            title="Edit Department"
-          >
-            <Edit2 size={14} />
-          </button>
-          <button
-            onClick={() => onDeleteDepartment(department.id)}
-            style={{
-              padding: '6px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'rgba(239, 68, 68, 0.08)',
-              color: '#f87171',
-            }}
-            title="Delete Department"
-          >
-            <Trash2 size={14} />
-          </button>
-        </div>
-      </div>
-
-      {/* Professors List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {department.professors && department.professors.length > 0 ? (
-          department.professors.map((prof) => (
-            <ProfessorCard
-              key={prof.id}
-              professor={prof}
-              universityName={universityName}
-              departmentName={department.name}
-              me={me}
-              onOpenStatusModal={onOpenStatusModal}
-              onEditProfessor={onEditProfessor}
-              onDeleteProfessor={onDeleteProfessor}
-              onToggleVisibility={onToggleVisibility}
-              onToggleList={onToggleList}
-            />
-          ))
-        ) : (
-          <div
-            style={{
-              padding: '24px',
-              textAlign: 'center',
-              background: 'rgba(15, 23, 42, 0.4)',
-              borderRadius: 'var(--radius-md)',
-              border: '1px dashed rgba(255, 255, 255, 0.1)',
-            }}
-          >
-            <Users size={28} color="var(--text-muted)" style={{ margin: '0 auto 8px' }} />
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 10px 0' }}>
-              No professors added to this department yet.
-            </p>
-            <button
-              className="btn btn-secondary"
-              onClick={() => onOpenAddProfessor(universityId, department.id)}
-              style={{ fontSize: '0.78rem', margin: '0 auto' }}
-            >
-              <Plus size={14} />
-              <span>Add First Professor</span>
-            </button>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }

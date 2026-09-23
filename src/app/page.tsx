@@ -523,7 +523,7 @@ export default function HomePage() {
       />
 
       {/* Main Container */}
-      <main style={{ maxWidth: '1440px', margin: '0 auto', padding: '28px 24px 60px', width: '100%', flex: 1 }}>
+      <main style={{ maxWidth: '1440px', margin: '0 auto', padding: '14px 16px 48px', width: '100%', flex: 1 }}>
         {/* Personal Progress Dashboard — private to me (My List only) */}
         <StatsDashboard universities={myListUniversities} me={me} />
 
@@ -532,10 +532,11 @@ export default function HomePage() {
           className="glass-panel"
           style={{
             display: 'flex',
-            gap: '8px',
-            padding: '10px 12px',
-            marginBottom: '16px',
+            gap: '6px',
+            padding: '6px 8px',
+            marginBottom: '10px',
             alignItems: 'center',
+            flexWrap: 'wrap',
           }}
         >
           <button
@@ -544,18 +545,18 @@ export default function HomePage() {
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '7px',
-              height: '40px',
-              padding: '0 16px',
-              borderRadius: 'var(--radius-md)',
-              fontSize: '0.82rem',
+              gap: '6px',
+              height: '30px',
+              padding: '0 12px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.78rem',
               fontWeight: 700,
               background: viewTab === 'my-list' ? 'rgba(99, 102, 241, 0.2)' : 'rgba(255, 255, 255, 0.04)',
               border: `1px solid ${viewTab === 'my-list' ? '#818cf8' : 'var(--border-subtle)'}`,
               color: viewTab === 'my-list' ? '#c7d2fe' : 'var(--text-secondary)',
             }}
           >
-            <List size={16} />
+            <List size={14} />
             <span>My List</span>
           </button>
           <button
@@ -564,18 +565,18 @@ export default function HomePage() {
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '7px',
-              height: '40px',
-              padding: '0 16px',
-              borderRadius: 'var(--radius-md)',
-              fontSize: '0.82rem',
+              gap: '6px',
+              height: '30px',
+              padding: '0 12px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.78rem',
               fontWeight: 700,
               background: viewTab === 'public' ? 'rgba(56, 189, 248, 0.18)' : 'rgba(255, 255, 255, 0.04)',
               border: `1px solid ${viewTab === 'public' ? '#38bdf8' : 'var(--border-subtle)'}`,
               color: viewTab === 'public' ? '#bae6fd' : 'var(--text-secondary)',
             }}
           >
-            <Globe2 size={16} />
+            <Globe2 size={14} />
             <span>Public Professors</span>
           </button>
           <button
@@ -584,21 +585,21 @@ export default function HomePage() {
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '7px',
-              height: '40px',
-              padding: '0 16px',
-              borderRadius: 'var(--radius-md)',
-              fontSize: '0.82rem',
+              gap: '6px',
+              height: '30px',
+              padding: '0 12px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.78rem',
               fontWeight: 700,
               background: viewTab === 'masters' ? 'rgba(251, 191, 36, 0.18)' : 'rgba(255, 255, 255, 0.04)',
               border: `1px solid ${viewTab === 'masters' ? '#fbbf24' : 'var(--border-subtle)'}`,
               color: viewTab === 'masters' ? '#fde68a' : 'var(--text-secondary)',
             }}
           >
-            <GraduationCap size={16} />
+            <GraduationCap size={14} />
             <span>Master&apos;s Courses</span>
           </button>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '8px' }}>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: '6px' }}>
             {viewTab === 'my-list'
               ? 'Private + your professors + ones you added'
               : viewTab === 'public'
@@ -647,97 +648,78 @@ export default function HomePage() {
             {groupedByCountry.map(([country, unis]) => {
               const progress = countryProgress(unis);
               return (
-                <section key={country} style={{ marginBottom: '20px' }}>
-                  {/* Country section header — appears before its universities */}
+                <section key={country} style={{ marginBottom: '4px' }}>
+                  {/* Country section header — compact spreadsheet group bar */}
                   <div
-                    className="glass-panel"
                     style={{
-                      padding: '14px 20px',
-                      marginBottom: '16px',
+                      padding: '7px 12px',
+                      marginBottom: '8px',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '14px',
+                      gap: '10px',
                       flexWrap: 'wrap',
-                      background:
-                        'linear-gradient(90deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.55) 100%)',
-                      border: '1px solid rgba(99, 102, 241, 0.25)',
+                      background: '#0e0e12',
+                      border: '1px solid rgba(99, 102, 241, 0.2)',
+                      borderRadius: 'var(--radius-md)',
                     }}
                   >
-                    <span style={{ fontSize: '1.6rem', lineHeight: 1 }}>{getCountryFlag(country)}</span>
-                    <div>
-                      <h2
-                        style={{
-                          fontSize: '1.15rem',
-                          fontWeight: 800,
-                          color: 'var(--text-primary)',
-                          margin: 0,
-                          letterSpacing: '-0.01em',
-                        }}
-                      >
-                        {country}
-                      </h2>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                        {unis.length} university{unis.length === 1 ? '' : 'ies'} ·{' '}
-                        {progress.total} professor{progress.total === 1 ? '' : 's'}
-                      </span>
-                    </div>
+                    <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>{getCountryFlag(country)}</span>
+                    <h2
+                      style={{
+                        fontSize: '0.88rem',
+                        fontWeight: 700,
+                        color: 'var(--text-primary)',
+                        margin: 0,
+                        letterSpacing: '-0.01em',
+                      }}
+                    >
+                      {country}
+                    </h2>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                      {unis.length} university{unis.length === 1 ? '' : 'ies'} ·{' '}
+                      {progress.total} professor{progress.total === 1 ? '' : 's'}
+                    </span>
 
-                    {/* My per-country progress */}
+                    {/* My per-country progress — compact inline bar */}
                     <div
                       style={{
                         marginLeft: 'auto',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '12px',
-                        minWidth: '200px',
+                        gap: '8px',
+                        minWidth: '160px',
                       }}
                       title={`${progress.contacted} of ${progress.total} professors contacted by you`}
                     >
-                      <div style={{ flex: 1 }}>
+                      <div
+                        style={{
+                          width: '100px',
+                          height: '5px',
+                          borderRadius: 'var(--radius-full)',
+                          background: 'rgba(255, 255, 255, 0.06)',
+                          overflow: 'hidden',
+                        }}
+                      >
                         <div
                           style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            fontSize: '0.68rem',
-                            color: 'var(--text-muted)',
-                            marginBottom: '4px',
+                            width: `${progress.percent}%`,
+                            height: '100%',
+                            background: me.color,
+                            transition: 'width 0.4s ease',
                           }}
-                        >
-                          <span>My progress</span>
-                          <span style={{ color: me.color, fontWeight: 700 }}>
-                            {progress.contacted}/{progress.total}
-                          </span>
-                        </div>
-                        <div
-                          style={{
-                            height: '8px',
-                            borderRadius: 'var(--radius-full)',
-                            background: 'rgba(255, 255, 255, 0.06)',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: `${progress.percent}%`,
-                              height: '100%',
-                              borderRadius: 'var(--radius-full)',
-                              background: `linear-gradient(90deg, ${me.color}88, ${me.color})`,
-                              boxShadow: `0 0 8px ${me.glowColor}`,
-                              transition: 'width 0.4s ease',
-                            }}
-                          />
-                        </div>
+                        />
                       </div>
                       <span
                         style={{
-                          fontSize: '1rem',
-                          fontWeight: 800,
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
                           color: me.color,
-                          minWidth: '44px',
+                          minWidth: '56px',
                           textAlign: 'right',
+                          fontFamily: 'var(--font-mono)',
                         }}
                       >
-                        {progress.percent}%
+                        {progress.contacted}/{progress.total}
                       </span>
                     </div>
                   </div>

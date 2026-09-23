@@ -3,7 +3,7 @@
 import React from 'react';
 import { University, User, OutreachStatusType } from '@/types';
 import { STATUS_MAP } from '@/lib/utils';
-import { Building2, School, Users, Send, Target } from 'lucide-react';
+import { Building2, School, Users, Send } from 'lucide-react';
 
 interface StatsDashboardProps {
   universities: University[];
@@ -64,7 +64,6 @@ export default function StatsDashboard({ universities, me }: StatsDashboardProps
     count: statusCounts[status],
     meta: STATUS_MAP[status],
   })).filter((row) => row.count > 0);
-  const maxCount = Math.max(1, ...breakdown.map((r) => r.count));
 
   const miniCards = [
     {
@@ -98,26 +97,33 @@ export default function StatsDashboard({ universities, me }: StatsDashboardProps
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '28px' }}>
-      {/* Mini cards */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+      {/* Compact KPI strip */}
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '14px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gap: '8px',
         }}
       >
         {miniCards.map((card) => (
           <div
             key={card.label}
-            className="glass-panel"
-            style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}
+            style={{
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-md)',
+              padding: '10px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+            }}
           >
             <div
               style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: 'var(--radius-md)',
+                width: '32px',
+                height: '32px',
+                borderRadius: 'var(--radius-sm)',
                 background: card.bg,
                 border: `1px solid ${card.border}`,
                 display: 'flex',
@@ -131,15 +137,24 @@ export default function StatsDashboard({ universities, me }: StatsDashboardProps
             <div>
               <div
                 style={{
-                  fontSize: '0.75rem',
-                  color: 'var(--text-secondary)',
+                  fontSize: '0.65rem',
+                  color: 'var(--text-muted)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em',
+                  lineHeight: 1.2,
                 }}
               >
                 {card.label}
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+              <div
+                style={{
+                  fontSize: '1.15rem',
+                  fontWeight: 700,
+                  color: 'var(--text-primary)',
+                  fontFamily: 'var(--font-mono)',
+                  lineHeight: 1.2,
+                }}
+              >
                 {card.value}
               </div>
             </div>
@@ -147,206 +162,106 @@ export default function StatsDashboard({ universities, me }: StatsDashboardProps
         ))}
       </div>
 
-      {/* Personal progress visuals — visible only to the logged-in user */}
+      {/* Personal progress — compact bar */}
       <div
-        className="glass-panel"
         style={{
-          padding: '24px',
-          border: `1.5px solid ${me.color}55`,
-          boxShadow: `0 0 28px ${me.glowColor}`,
-          position: 'relative',
-          overflow: 'hidden',
+          background: 'var(--bg-card)',
+          border: `1px solid ${me.color}33`,
+          borderRadius: 'var(--radius-md)',
+          padding: '12px 14px',
         }}
       >
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: '4px',
-            background: me.color,
-          }}
-        />
-
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             flexWrap: 'wrap',
-            gap: '16px',
-            marginBottom: '20px',
+            gap: '10px',
+            marginBottom: '10px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span
               style={{
-                width: '38px',
-                height: '38px',
+                width: '24px',
+                height: '24px',
                 borderRadius: '50%',
                 background: me.color,
-                color: '#090d16',
-                fontSize: '1rem',
+                color: '#000',
+                fontSize: '0.7rem',
                 fontWeight: 800,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: `0 0 12px ${me.glowColor}`,
               }}
             >
               {me.avatar}
-            </div>
-            <div>
-              <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {me.name}&apos;s Progress
-              </div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                {me.role} · Only you can see this
-              </span>
-            </div>
+            </span>
+            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              {me.name}&apos;s pipeline
+            </span>
+            <span className="xl-cell-muted">private to you</span>
           </div>
-
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#10b981' }}>
-              {successRate}%
-            </div>
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Success / Int. Rate
-            </div>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'baseline' }}>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              Contacted{' '}
+              <strong style={{ color: me.color, fontFamily: 'var(--font-mono)', fontSize: '0.9rem' }}>
+                {contacted}/{totalProfessors}
+              </strong>
+            </span>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              Success{' '}
+              <strong style={{ color: '#10b981', fontFamily: 'var(--font-mono)', fontSize: '0.9rem' }}>
+                {successRate}%
+              </strong>
+            </span>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              Progress{' '}
+              <strong style={{ color: me.color, fontFamily: 'var(--font-mono)', fontSize: '0.9rem' }}>
+                {progressPercent}%
+              </strong>
+            </span>
           </div>
         </div>
 
+        {/* Single progress bar */}
         <div
           style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '28px',
-            alignItems: 'center',
+            height: '6px',
+            borderRadius: 'var(--radius-full)',
+            background: 'rgba(255, 255, 255, 0.05)',
+            overflow: 'hidden',
+            marginBottom: '10px',
           }}
         >
-          {/* Progress ring */}
           <div
             style={{
-              width: '150px',
-              height: '150px',
-              borderRadius: '50%',
-              background: `conic-gradient(${me.color} ${progressPercent * 3.6}deg, rgba(255, 255, 255, 0.06) 0deg)`,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              boxShadow: `0 0 24px ${me.glowColor}`,
+              width: `${progressPercent}%`,
+              height: '100%',
+              background: me.color,
+              transition: 'width 0.4s ease',
             }}
-            title={`${contacted} of ${totalProfessors} professors contacted`}
-          >
-            <div
-              style={{
-                width: '116px',
-                height: '116px',
-                borderRadius: '50%',
-                background: '#0f172a',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '1px solid rgba(255, 255, 255, 0.06)',
-              }}
-            >
-              <span style={{ fontSize: '1.9rem', fontWeight: 800, color: me.color, lineHeight: 1 }}>
-                {progressPercent}%
-              </span>
+          />
+        </div>
+
+        {/* Status breakdown — compact rows */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+          {breakdown.length > 0 ? (
+            breakdown.map(({ status, count, meta }) => (
               <span
-                style={{
-                  fontSize: '0.6rem',
-                  color: 'var(--text-muted)',
-                  letterSpacing: '0.08em',
-                  marginTop: '4px',
-                }}
+                key={status}
+                className="xl-chip"
+                style={{ color: meta.color, background: meta.bg, borderColor: meta.border }}
+                title={meta.label}
               >
-                CONTACTED
+                {meta.icon} {meta.shortLabel}{' '}
+                <strong style={{ fontFamily: 'var(--font-mono)' }}>{count}</strong>
               </span>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                {contacted}/{totalProfessors} profs
-              </span>
-            </div>
-          </div>
-
-          {/* Status breakdown bars */}
-          <div style={{ flex: '1 1 280px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
-            <div
-              style={{
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                color: 'var(--text-muted)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                marginBottom: '2px',
-              }}
-            >
-              <Target size={13} />
-              <span>My Pipeline Breakdown</span>
-            </div>
-
-            {breakdown.length > 0 ? (
-              breakdown.map(({ status, count, meta }) => (
-                <div key={status} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span
-                    style={{
-                      fontSize: '0.72rem',
-                      width: '128px',
-                      color: meta.color,
-                      fontWeight: 600,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                    title={meta.label}
-                  >
-                    {meta.icon} {meta.shortLabel}
-                  </span>
-                  <div
-                    style={{
-                      flex: 1,
-                      height: '10px',
-                      borderRadius: 'var(--radius-full)',
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: `${Math.max(4, (count / maxCount) * 100)}%`,
-                        height: '100%',
-                        borderRadius: 'var(--radius-full)',
-                        background: `linear-gradient(90deg, ${meta.color}99, ${meta.color})`,
-                        boxShadow: `0 0 8px ${meta.glow}`,
-                        transition: 'width 0.4s ease',
-                      }}
-                    />
-                  </div>
-                  <span
-                    style={{
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      color: 'var(--text-primary)',
-                      width: '24px',
-                      textAlign: 'right',
-                    }}
-                  >
-                    {count}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
-                No professors tracked yet — add universities to start your pipeline.
-              </p>
-            )}
-          </div>
+            ))
+          ) : (
+            <span className="xl-cell-muted">No outreach yet — open a professor row to update status.</span>
+          )}
         </div>
       </div>
     </div>

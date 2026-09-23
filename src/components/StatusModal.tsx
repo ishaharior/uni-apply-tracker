@@ -92,8 +92,8 @@ export default function StatusModal({
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(5, 8, 16, 0.8)',
-        backdropFilter: 'blur(8px)',
+        background: 'rgba(0, 0, 0, 0.78)',
+        backdropFilter: 'none',
         zIndex: 100,
         display: 'flex',
         alignItems: 'center',
@@ -109,13 +109,13 @@ export default function StatusModal({
           maxWidth: '580px',
           maxHeight: '92vh',
           overflowY: 'auto',
-          padding: '28px',
+          padding: '16px',
           position: 'relative',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span

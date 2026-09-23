@@ -2,17 +2,17 @@
 
 import React, { useState } from 'react';
 import { University, Department, Professor, User } from '@/types';
-import { 
-  Building2, 
-  MapPin, 
-  Award, 
-  ExternalLink, 
-  ChevronDown, 
-  ChevronUp, 
-  Plus, 
-  Edit2, 
-  Trash2, 
-  Globe 
+import {
+  Building2,
+  MapPin,
+  Award,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Edit2,
+  Trash2,
+  Globe,
 } from 'lucide-react';
 import DepartmentSection from './DepartmentSection';
 
@@ -50,244 +50,147 @@ export default function UniversityCard({
   onToggleProfessorList,
 }: UniversityCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
+  const [openDepts, setOpenDepts] = useState<Record<string, boolean>>({});
 
-  // Compute university stats (my outreach only)
   let totalProfessors = 0;
   let myContacted = 0;
-
   university.departments.forEach((dept) => {
     totalProfessors += dept.professors.length;
     dept.professors.forEach((p) => {
-      if (p.myOutreach && p.myOutreach.status !== 'not_contacted') {
-        myContacted++;
-      }
+      if (p.myOutreach && p.myOutreach.status !== 'not_contacted') myContacted++;
     });
   });
 
+  const toggleDept = (id: string) =>
+    setOpenDepts((prev) => ({ ...prev, [id]: prev[id] === undefined ? true : !prev[id] }));
+
   return (
-    <div
-      className="glass-panel"
-      style={{
-        marginBottom: '24px',
-        overflow: 'hidden',
-        border: '1px solid var(--border-subtle)',
-        transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-      }}
-    >
-      {/* University Card Header */}
+    <div className="xl-wrap" style={{ marginBottom: 12 }}>
+      {/* University group row — compact spreadsheet header */}
       <div
         style={{
-          padding: '20px 24px',
-          background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%)',
           display: 'flex',
-          justifyContent: 'space-between',
           alignItems: 'center',
+          gap: 10,
+          padding: '8px 12px',
+          background: 'linear-gradient(90deg, #101016 0%, #0c0c10 100%)',
+          borderBottom: expanded ? '1px solid var(--border-grid)' : 'none',
           flexWrap: 'wrap',
-          gap: '16px',
-          borderBottom: expanded ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: '1 1 300px' }}>
-          <div
+        <button
+          type="button"
+          className="xl-icon-btn"
+          onClick={() => setExpanded(!expanded)}
+          title={expanded ? 'Collapse' : 'Expand'}
+        >
+          {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+        </button>
+        <Building2 size={15} color="#818cf8" style={{ flexShrink: 0 }} />
+        <strong style={{ fontSize: '0.92rem', color: 'var(--text-primary)', fontWeight: 700 }}>
+          {university.name}
+        </strong>
+        {university.ranking && (
+          <span
+            className="xl-chip"
             style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: 'var(--radius-md)',
-              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(168, 85, 247, 0.25))',
-              border: '1px solid rgba(99, 102, 241, 0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
+              color: '#fbbf24',
+              background: 'rgba(251,191,36,0.1)',
+              borderColor: 'rgba(251,191,36,0.28)',
             }}
           >
-            <Building2 size={24} color="#a5b4fc" />
-          </div>
+            <Award size={10} /> #{university.ranking}
+          </span>
+        )}
+        <span
+          className="xl-chip"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            color: 'var(--text-secondary)',
+            background: 'rgba(255,255,255,0.03)',
+            borderColor: 'var(--border-subtle)',
+          }}
+        >
+          <MapPin size={10} color="#f43f5e" />
+          {university.city ? `${university.city}, ` : ''}
+          {university.country}
+        </span>
+        <span className="xl-cell-muted">
+          {university.departments.length} dept · {totalProfessors} prof ·{' '}
+          <span style={{ color: me.color }}>
+            {myContacted}/{totalProfessors} mine
+          </span>
+        </span>
 
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-              <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                {university.name}
-              </h2>
-
-              {university.ranking && (
-                <span
-                  style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    background: 'rgba(251, 191, 36, 0.15)',
-                    color: '#fbbf24',
-                    border: '1px solid rgba(251, 191, 36, 0.35)',
-                    padding: '2px 8px',
-                    borderRadius: 'var(--radius-full)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                  }}
-                >
-                  <Award size={12} />
-                  <span>Rank #{university.ranking}</span>
-                </span>
-              )}
-            </div>
-
-            {/* Sub-meta: Location, Portal, Website */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'center', marginTop: '6px' }}>
-              <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                <MapPin size={14} color="#f43f5e" />
-                <span>{university.city ? `${university.city}, ` : ''}{university.country}</span>
-              </span>
-
-              {university.portalUrl && (
-                <a
-                  href={university.portalUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    fontSize: '0.8rem',
-                    color: '#38bdf8',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                  }}
-                >
-                  <span>App Portal</span>
-                  <ExternalLink size={12} />
-                </a>
-              )}
-
-              {university.websiteUrl && (
-                <a
-                  href={university.websiteUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    fontSize: '0.8rem',
-                    color: 'var(--text-muted)',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                  }}
-                >
-                  <Globe size={12} />
-                  <span>Official Site</span>
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Side: Quick Counts, Add Department, Expand Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {/* Summary Pills */}
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <span
-              style={{
-                fontSize: '0.75rem',
-                color: 'var(--text-secondary)',
-                background: 'rgba(255, 255, 255, 0.05)',
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-full)',
-                border: '1px solid var(--border-subtle)',
-              }}
+        <span style={{ marginLeft: 'auto', display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+          {university.portalUrl && (
+            <a
+              href={university.portalUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="xl-icon-btn"
+              title="Application portal"
             >
-              {university.departments.length} Depts
-            </span>
-            <span
-              style={{
-                fontSize: '0.75rem',
-                color: 'var(--text-secondary)',
-                background: 'rgba(255, 255, 255, 0.05)',
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-full)',
-                border: '1px solid var(--border-subtle)',
-              }}
+              <ExternalLink size={13} />
+            </a>
+          )}
+          {university.websiteUrl && (
+            <a
+              href={university.websiteUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="xl-icon-btn"
+              title="Official site"
             >
-              {totalProfessors} Professors
-            </span>
-            <span
-              style={{
-                fontSize: '0.75rem',
-                color: me.color,
-                background: me.accentBg,
-                padding: '4px 10px',
-                borderRadius: 'var(--radius-full)',
-                border: `1px solid ${me.color}55`,
-              }}
-              title="Professors you have contacted"
-            >
-              {myContacted}/{totalProfessors} Mine
-            </span>
-          </div>
-
+              <Globe size={13} />
+            </a>
+          )}
           <button
+            type="button"
             className="btn btn-primary"
+            style={{ fontSize: '0.72rem', padding: '3px 8px' }}
             onClick={() => onOpenAddDepartment(university.id)}
-            style={{ fontSize: '0.8rem', padding: '6px 14px' }}
           >
-            <Plus size={15} />
-            <span>Add Dept</span>
+            <Plus size={12} />
+            Dept
           </button>
-
           <button
+            type="button"
+            className="xl-icon-btn"
             onClick={() => onEditUniversity(university)}
-            style={{
-              padding: '7px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'rgba(255, 255, 255, 0.04)',
-              color: 'var(--text-muted)',
-            }}
-            title="Edit University"
+            title="Edit university"
           >
-            <Edit2 size={15} />
+            <Edit2 size={14} />
           </button>
-
           <button
+            type="button"
+            className="xl-icon-btn danger"
             onClick={() => onDeleteUniversity(university.id)}
-            style={{
-              padding: '7px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'rgba(239, 68, 68, 0.08)',
-              color: '#f87171',
-            }}
-            title="Delete University"
+            title="Delete university"
           >
-            <Trash2 size={15} />
+            <Trash2 size={14} />
           </button>
-
-          <button
-            onClick={() => setExpanded(!expanded)}
-            style={{
-              padding: '7px',
-              borderRadius: 'var(--radius-sm)',
-              background: 'rgba(255, 255, 255, 0.05)',
-              color: 'var(--text-primary)',
-            }}
-            title={expanded ? 'Collapse' : 'Expand'}
-          >
-            {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-          </button>
-        </div>
+        </span>
       </div>
 
-      {/* University Notes (if any) */}
       {expanded && university.notes && (
         <div
           style={{
-            padding: '10px 24px',
-            background: 'rgba(99, 102, 241, 0.05)',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-            fontSize: '0.82rem',
+            padding: '5px 12px',
+            fontSize: '0.75rem',
             color: '#c7d2fe',
+            background: 'rgba(99,102,241,0.04)',
+            borderBottom: '1px solid var(--border-grid)',
           }}
         >
-          💡 <strong>Notes:</strong> {university.notes}
+          📌 {university.notes}
         </div>
       )}
 
-      {/* Accordion Body: Departments */}
       {expanded && (
-        <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ padding: '8px 10px 2px' }}>
           {university.departments.length > 0 ? (
             university.departments.map((dept) => (
               <DepartmentSection
@@ -296,6 +199,8 @@ export default function UniversityCard({
                 universityId={university.id}
                 universityName={university.name}
                 me={me}
+                expanded={openDepts[dept.id] !== false}
+                onToggleExpand={() => toggleDept(dept.id)}
                 onOpenAddProfessor={onOpenAddProfessor}
                 onOpenStatusModal={onOpenStatusModal}
                 onEditProfessor={onEditProfessor}
@@ -309,23 +214,23 @@ export default function UniversityCard({
           ) : (
             <div
               style={{
-                padding: '32px',
+                padding: '16px',
                 textAlign: 'center',
-                background: 'rgba(15, 23, 42, 0.3)',
-                borderRadius: 'var(--radius-md)',
-                border: '1px dashed rgba(255, 255, 255, 0.1)',
+                fontSize: '0.8rem',
+                color: 'var(--text-muted)',
+                border: '1px dashed var(--border-grid)',
+                borderRadius: 'var(--radius-sm)',
               }}
             >
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                No departments added under {university.name} yet.
-              </p>
+              No departments.{' '}
               <button
+                type="button"
                 className="btn btn-secondary"
+                style={{ fontSize: '0.72rem', padding: '3px 8px', marginLeft: 6 }}
                 onClick={() => onOpenAddDepartment(university.id)}
-                style={{ fontSize: '0.82rem' }}
               >
-                <Plus size={15} />
-                <span>Add Department</span>
+                <Plus size={12} />
+                Add department
               </button>
             </div>
           )}

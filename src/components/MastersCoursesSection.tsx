@@ -10,8 +10,6 @@ import {
   Globe,
   Lock,
   ExternalLink,
-  Calendar,
-  BookOpen,
   X,
 } from 'lucide-react';
 
@@ -83,24 +81,24 @@ export default function MastersCoursesSection({
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '20px 22px', marginBottom: '24px' }}>
+    <div className="glass-panel" style={{ padding: '12px 12px', marginBottom: '14px' }}>
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
-          gap: '12px',
-          marginBottom: '16px',
+          gap: '8px',
+          marginBottom: '10px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <GraduationCap size={20} color="#fbbf24" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <GraduationCap size={16} color="#fbbf24" />
           <div>
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+            <h2 style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
               Regular Master&apos;s Course
             </h2>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '1px 0 0' }}>
               {mode === 'manage'
                 ? 'Personal list — toggle Public to share with everyone'
                 : 'Shared by other users — public Master’s courses'}
@@ -108,8 +106,8 @@ export default function MastersCoursesSection({
           </div>
         </div>
         {mode === 'manage' && (
-          <button type="button" className="btn btn-primary" onClick={openAdd} style={{ fontSize: '0.82rem' }}>
-            <Plus size={15} />
+          <button type="button" className="btn btn-primary" onClick={openAdd} style={{ fontSize: '0.78rem', padding: '5px 10px' }}>
+            <Plus size={14} />
             <span>Add Course</span>
           </button>
         )}
@@ -120,17 +118,17 @@ export default function MastersCoursesSection({
           onSubmit={submit}
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '12px',
-            padding: '14px',
-            marginBottom: '16px',
-            background: 'rgba(15, 23, 42, 0.55)',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: '10px',
+            padding: '12px',
+            marginBottom: '12px',
+            background: '#0e0e12',
             border: '1px solid rgba(251, 191, 36, 0.25)',
-            borderRadius: 'var(--radius-md)',
+            borderRadius: 'var(--radius-sm)',
           }}
         >
           <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <strong style={{ fontSize: '0.85rem', color: '#fbbf24' }}>
+            <strong style={{ fontSize: '0.8rem', color: '#fbbf24' }}>
               {editingId ? 'Edit Course' : 'New Course'}
             </strong>
             <button
@@ -141,11 +139,11 @@ export default function MastersCoursesSection({
               }}
               style={{ color: 'var(--text-muted)', background: 'transparent' }}
             >
-              <X size={16} />
+              <X size={15} />
             </button>
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+            <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '3px' }}>
               University Name *
             </label>
             <input
@@ -157,7 +155,7 @@ export default function MastersCoursesSection({
             />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+            <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '3px' }}>
               Department Name *
             </label>
             <input
@@ -169,7 +167,7 @@ export default function MastersCoursesSection({
             />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+            <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '3px' }}>
               IELTS Req.
             </label>
             <input
@@ -180,7 +178,7 @@ export default function MastersCoursesSection({
             />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+            <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '3px' }}>
               Last Date to Apply
             </label>
             <input
@@ -191,7 +189,7 @@ export default function MastersCoursesSection({
             />
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+            <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '3px' }}>
               Application Link
             </label>
             <input
@@ -202,7 +200,7 @@ export default function MastersCoursesSection({
               placeholder="https://..."
             />
           </div>
-          <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+          <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
             <button
               type="button"
               className="btn btn-secondary"
@@ -211,10 +209,11 @@ export default function MastersCoursesSection({
                 setEditingId(null);
               }}
               disabled={saving}
+              style={{ fontSize: '0.78rem', padding: '5px 10px' }}
             >
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" disabled={saving}>
+            <button type="submit" className="btn btn-primary" disabled={saving} style={{ fontSize: '0.78rem', padding: '5px 10px' }}>
               {saving ? 'Saving...' : editingId ? 'Update Course' : 'Add Course'}
             </button>
           </div>
@@ -224,12 +223,12 @@ export default function MastersCoursesSection({
       {visible.length === 0 ? (
         <div
           style={{
-            padding: '28px',
+            padding: '16px',
             textAlign: 'center',
-            border: '1px dashed rgba(255, 255, 255, 0.12)',
-            borderRadius: 'var(--radius-md)',
+            border: '1px dashed rgba(255, 255, 255, 0.1)',
+            borderRadius: 'var(--radius-sm)',
             color: 'var(--text-secondary)',
-            fontSize: '0.88rem',
+            fontSize: '0.8rem',
           }}
         >
           {mode === 'manage'
@@ -237,168 +236,124 @@ export default function MastersCoursesSection({
             : 'No shared Master’s courses yet.'}
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {visible.map((course) => {
-            const isOwner = course.isMine || course.ownerId === me.id;
-            return (
-              <div
-                key={course.id}
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '12px',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '14px 16px',
-                  background: 'rgba(15, 23, 42, 0.55)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-md)',
-                }}
-              >
-                <div style={{ flex: '1 1 240px', minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <strong style={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>
-                      {course.universityName}
-                    </strong>
-                    <span style={{ fontSize: '0.78rem', color: '#c7d2fe' }}>{course.departmentName}</span>
-                    {course.visibility === 'public' ? (
-                      <span
-                        style={{
-                          fontSize: '0.68rem',
-                          fontWeight: 700,
-                          padding: '2px 8px',
-                          borderRadius: 'var(--radius-full)',
-                          background: 'rgba(56, 189, 248, 0.12)',
-                          color: '#7dd3fc',
-                          border: '1px solid rgba(56, 189, 248, 0.35)',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                        }}
-                      >
-                        <Globe size={11} /> Public
-                      </span>
-                    ) : (
-                      <span
-                        style={{
-                          fontSize: '0.68rem',
-                          fontWeight: 700,
-                          padding: '2px 8px',
-                          borderRadius: 'var(--radius-full)',
-                          background: 'rgba(244, 63, 94, 0.12)',
-                          color: '#fda4af',
-                          border: '1px solid rgba(244, 63, 94, 0.35)',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                        }}
-                      >
-                        <Lock size={11} /> Private
-                      </span>
-                    )}
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '12px',
-                      marginTop: '6px',
-                      fontSize: '0.78rem',
-                      color: 'var(--text-secondary)',
-                    }}
-                  >
-                    {course.ieltsReq && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <BookOpen size={13} color="#38bdf8" />
-                        IELTS: {course.ieltsReq}
-                      </span>
-                    )}
-                    {course.lastDate && (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <Calendar size={13} color="#f43f5e" />
-                        Last date: {course.lastDate}
-                      </span>
-                    )}
-                    {course.applicationLink && (
-                      <a
-                        href={course.applicationLink}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#38bdf8' }}
-                      >
-                        Apply <ExternalLink size={12} />
-                      </a>
-                    )}
-                    {!isOwner && course.ownerName && (
-                      <span style={{ color: 'var(--text-muted)' }}>by {course.ownerName}</span>
-                    )}
-                  </div>
-                </div>
-
-                {mode === 'manage' && isOwner && (
-                  <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                    <button
-                      type="button"
-                      onClick={() => onToggleVisibility(course)}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        padding: '6px 10px',
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        borderRadius: 'var(--radius-full)',
-                        background:
-                          course.visibility === 'public'
-                            ? 'rgba(56, 189, 248, 0.12)'
-                            : 'rgba(168, 85, 247, 0.12)',
-                        color: course.visibility === 'public' ? '#7dd3fc' : '#d8b4fe',
-                        border: `1px solid ${
-                          course.visibility === 'public'
-                            ? 'rgba(56, 189, 248, 0.35)'
-                            : 'rgba(168, 85, 247, 0.35)'
-                        }`,
-                      }}
-                      title={
-                        course.visibility === 'public'
-                          ? 'Public — click to make private'
-                          : 'Private — click to share publicly'
-                      }
-                    >
-                      {course.visibility === 'public' ? <Globe size={13} /> : <Lock size={13} />}
-                      <span>{course.visibility === 'public' ? 'Public' : 'Private'}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => openEdit(course)}
-                      style={{
-                        padding: '6px',
-                        borderRadius: 'var(--radius-sm)',
-                        background: 'rgba(255, 255, 255, 0.04)',
-                        color: 'var(--text-muted)',
-                      }}
-                      title="Edit"
-                    >
-                      <Edit2 size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDelete(course.id)}
-                      style={{
-                        padding: '6px',
-                        borderRadius: 'var(--radius-sm)',
-                        background: 'rgba(239, 68, 68, 0.08)',
-                        color: '#f87171',
-                      }}
-                      title="Delete"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+        <div className="xl-wrap" style={{ margin: 0, borderRadius: 'var(--radius-sm)' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="xl-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '24%' }}>University</th>
+                  <th style={{ width: '22%' }}>Department</th>
+                  <th style={{ width: '14%' }}>IELTS</th>
+                  <th style={{ width: '16%' }}>Last Date</th>
+                  <th style={{ width: '8%' }}>Vis</th>
+                  <th style={{ width: '6%' }}>Apply</th>
+                  <th style={{ width: mode === 'manage' ? '10%' : '0%', display: mode === 'manage' ? undefined : 'none' }}>
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((course) => {
+                  const isOwner = course.isMine || course.ownerId === me.id;
+                  return (
+                    <tr key={course.id}>
+                      <td className="xl-cell-name" title={course.universityName}>
+                        {course.universityName}
+                        {!isOwner && course.ownerName && (
+                          <span className="xl-cell-muted" style={{ marginLeft: 6, fontWeight: 400 }}>
+                            · {course.ownerName}
+                          </span>
+                        )}
+                      </td>
+                      <td className="xl-cell-muted" title={course.departmentName}>
+                        {course.departmentName}
+                      </td>
+                      <td title={course.ieltsReq}>{course.ieltsReq || '—'}</td>
+                      <td title={course.lastDate}>{course.lastDate || '—'}</td>
+                      <td>
+                        {course.visibility === 'public' ? (
+                          <span
+                            className="xl-chip"
+                            style={{
+                              background: 'rgba(56, 189, 248, 0.1)',
+                              color: '#7dd3fc',
+                              borderColor: 'rgba(56, 189, 248, 0.3)',
+                            }}
+                          >
+                            <Globe size={11} /> Pub
+                          </span>
+                        ) : (
+                          <span
+                            className="xl-chip"
+                            style={{
+                              background: 'rgba(244, 63, 94, 0.1)',
+                              color: '#fda4af',
+                              borderColor: 'rgba(244, 63, 94, 0.3)',
+                            }}
+                          >
+                            <Lock size={11} /> Priv
+                          </span>
+                        )}
+                      </td>
+                      <td>
+                        {course.applicationLink ? (
+                          <a
+                            href={course.applicationLink}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="xl-icon-btn"
+                            title="Apply"
+                          >
+                            <ExternalLink size={13} />
+                          </a>
+                        ) : (
+                          <span className="xl-cell-muted">—</span>
+                        )}
+                      </td>
+                      {mode === 'manage' && (
+                        <td>
+                          <span className="xl-actions">
+                            {isOwner && (
+                              <>
+                                <button
+                                  type="button"
+                                  className="xl-icon-btn"
+                                  onClick={() => onToggleVisibility(course)}
+                                  title={
+                                    course.visibility === 'public'
+                                      ? 'Public — click to make private'
+                                      : 'Private — click to share publicly'
+                                  }
+                                >
+                                  {course.visibility === 'public' ? <Globe size={13} /> : <Lock size={13} />}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="xl-icon-btn"
+                                  onClick={() => openEdit(course)}
+                                  title="Edit"
+                                >
+                                  <Edit2 size={13} />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="xl-icon-btn danger"
+                                  onClick={() => onDelete(course.id)}
+                                  title="Delete"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </>
+                            )}
+                          </span>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

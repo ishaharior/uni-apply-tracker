@@ -108,8 +108,8 @@ Best regards,
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(5, 8, 16, 0.8)',
-        backdropFilter: 'blur(8px)',
+        background: 'rgba(0, 0, 0, 0.78)',
+        backdropFilter: 'none',
         zIndex: 100,
         display: 'flex',
         alignItems: 'center',
@@ -125,41 +125,32 @@ Best regards,
           maxWidth: '720px',
           maxHeight: '90vh',
           overflowY: 'auto',
-          padding: '28px',
+          padding: '16px',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Sparkles size={20} color="#c084fc" />
-              <h3 style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+              <Sparkles size={16} color="#c084fc" />
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
                 Cold Outreach Email Templates
               </h3>
             </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '3px 0 0 0' }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
               Battle-tested outreach templates for Shawon, Imran, and Mahmud. Replace bracketed tags before sending!
             </p>
           </div>
           <button
             onClick={onClose}
-            style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '50%',
-              width: '32px',
-              height: '32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--text-muted)',
-            }}
+            className="xl-icon-btn"
+            style={{ width: '28px', height: '28px' }}
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {templates.map((tpl) => (
             <div
               key={tpl.id}

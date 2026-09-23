@@ -40,56 +40,59 @@ export default function FilterBar({
   };
 
   return (
-    <div className="glass-panel" style={{ padding: '16px 20px', marginBottom: '24px' }}>
+    <div
+      className="glass-panel"
+      style={{ padding: '8px 10px', marginBottom: '12px' }}
+    >
       <div
         style={{
           display: 'flex',
           flexWrap: 'wrap',
-          gap: '12px',
+          gap: '6px',
           alignItems: 'center',
           justifyContent: 'space-between',
         }}
       >
         {/* Search Input */}
-        <div style={{ position: 'relative', flex: '1 1 280px', minWidth: '240px' }}>
+        <div style={{ position: 'relative', flex: '1 1 240px', minWidth: '200px' }}>
           <Search
-            size={18}
+            size={14}
             color="var(--text-muted)"
-            style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }}
+            style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }}
           />
           <input
             type="text"
             className="input-field"
-            placeholder="Search university, professor, research area (e.g., LLMs, Robotics)..."
+            placeholder="Search university, professor, research area..."
             value={filters.searchQuery}
             onChange={(e) => update({ searchQuery: e.target.value })}
-            style={{ paddingLeft: '38px', height: '40px' }}
+            style={{ paddingLeft: '30px', height: '32px', fontSize: '0.8rem' }}
           />
           {filters.searchQuery && (
             <button
               onClick={() => update({ searchQuery: '' })}
               style={{
                 position: 'absolute',
-                right: '10px',
+                right: '8px',
                 top: '50%',
                 transform: 'translateY(-50%)',
                 background: 'transparent',
                 color: 'var(--text-muted)',
               }}
             >
-              <X size={15} />
+              <X size={14} />
             </button>
           )}
         </div>
 
         {/* Dropdowns */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
           {/* Country Filter */}
           <select
             className="input-field"
             value={filters.country}
             onChange={(e) => update({ country: e.target.value })}
-            style={{ width: 'auto', height: '40px', paddingRight: '28px' }}
+            style={{ width: 'auto', height: '32px', paddingRight: '26px', fontSize: '0.78rem' }}
           >
             <option value="all">🌐 All Countries</option>
             {countries.map((c) => (
@@ -104,7 +107,7 @@ export default function FilterBar({
             className="input-field"
             value={filters.visibility}
             onChange={(e) => update({ visibility: e.target.value as FilterOptions['visibility'] })}
-            style={{ width: 'auto', height: '40px', paddingRight: '28px' }}
+            style={{ width: 'auto', height: '32px', paddingRight: '26px', fontSize: '0.78rem' }}
             title="Filter professors by visibility"
           >
             <option value="all">👥 All Visibility</option>
@@ -117,7 +120,7 @@ export default function FilterBar({
             className="input-field"
             value={filters.statusFilter}
             onChange={(e) => update({ statusFilter: e.target.value as OutreachStatusType | 'all' })}
-            style={{ width: 'auto', height: '40px', paddingRight: '28px' }}
+            style={{ width: 'auto', height: '32px', paddingRight: '26px', fontSize: '0.78rem' }}
           >
             <option value="all">📊 All My Statuses</option>
             <option value="positive">⭐ Positive Reply</option>
@@ -136,18 +139,18 @@ export default function FilterBar({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              height: '40px',
-              padding: '0 12px',
-              borderRadius: 'var(--radius-md)',
-              background: filters.needsFollowUp ? 'rgba(244, 63, 94, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+              gap: '5px',
+              height: '32px',
+              padding: '0 10px',
+              borderRadius: 'var(--radius-sm)',
+              background: filters.needsFollowUp ? 'rgba(244, 63, 94, 0.18)' : 'rgba(255, 255, 255, 0.04)',
               border: `1px solid ${filters.needsFollowUp ? '#f43f5e' : 'var(--border-subtle)'}`,
               color: filters.needsFollowUp ? '#fda4af' : 'var(--text-secondary)',
-              fontSize: '0.8rem',
+              fontSize: '0.75rem',
               fontWeight: 600,
             }}
           >
-            <Clock size={15} color={filters.needsFollowUp ? '#f43f5e' : 'var(--text-muted)'} />
+            <Clock size={13} color={filters.needsFollowUp ? '#f43f5e' : 'var(--text-muted)'} />
             <span>Overdue (&gt;7d)</span>
           </button>
 
@@ -156,15 +159,15 @@ export default function FilterBar({
               type="button"
               onClick={resetFilters}
               className="btn btn-secondary"
-              style={{ height: '40px', padding: '0 12px', fontSize: '0.78rem' }}
+              style={{ height: '32px', padding: '0 10px', fontSize: '0.75rem' }}
             >
-              <X size={14} />
+              <X size={13} />
               <span>Reset</span>
             </button>
           )}
         </div>
 
-        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
           {totalFilteredProfessors} professor{totalFilteredProfessors === 1 ? '' : 's'} shown
         </span>
       </div>

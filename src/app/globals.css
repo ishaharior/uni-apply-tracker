@@ -4,24 +4,29 @@
   --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
-  /* Theme Canvas */
-  --bg-main: #090d16;
-  --bg-surface: #0f172a;
-  --bg-card: rgba(17, 24, 39, 0.85);
-  --bg-card-hover: rgba(26, 36, 56, 0.95);
-  --bg-card-alt: rgba(15, 23, 42, 0.6);
-  --bg-input: rgba(13, 20, 36, 0.9);
-  --bg-glass: rgba(17, 24, 39, 0.7);
+  /* Theme Canvas — pure black, easy on the eyes */
+  --bg-main: #000000;
+  --bg-surface: #0a0a0a;
+  --bg-card: #0c0c0e;
+  --bg-card-hover: #141418;
+  --bg-card-alt: #0a0a0c;
+  --bg-input: #111114;
+  --bg-glass: rgba(12, 12, 14, 0.92);
+  --bg-row: #0a0a0c;
+  --bg-row-alt: #0e0e11;
+  --bg-row-hover: #16161a;
+  --bg-header-row: #121216;
 
-  /* Borders & Dividers */
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-focus: rgba(99, 102, 241, 0.5);
-  --border-hover: rgba(255, 255, 255, 0.15);
+  /* Borders & Dividers — soft grid lines */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-grid: rgba(255, 255, 255, 0.05);
+  --border-focus: rgba(129, 140, 248, 0.55);
+  --border-hover: rgba(255, 255, 255, 0.12);
 
-  /* Typography */
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  /* Typography — muted for dark bg */
+  --text-primary: #e8e8ec;
+  --text-secondary: #9a9aa3;
+  --text-muted: #6b6b75;
   --text-accent: #818cf8;
 
   /* Primary Brand Gradients */
@@ -63,11 +68,11 @@
   --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.5);
   --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.2);
 
-  /* Radius */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
+  /* Radius — tighter, spreadsheet feel */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
   --radius-full: 9999px;
 }
 
@@ -82,14 +87,12 @@ body {
   background-color: var(--bg-main);
   color: var(--text-primary);
   min-height: 100vh;
-  line-height: 1.5;
-  background-image: 
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99, 102, 241, 0.15), transparent 70%),
-    radial-gradient(ellipse 50% 40% at 85% 60%, rgba(56, 189, 248, 0.08), transparent 60%),
-    radial-gradient(ellipse 50% 40% at 15% 40%, rgba(168, 85, 247, 0.08), transparent 60%);
+  line-height: 1.45;
+  background-image: none;
   background-attachment: fixed;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  font-size: 14px;
 }
 
 a {
@@ -129,20 +132,170 @@ input, textarea, select {
 /* Glassmorphism Containers */
 .glass-panel {
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  box-shadow: none;
 }
 
 .glass-modal {
-  background: rgba(15, 23, 42, 0.95);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), 0 0 40px rgba(99, 102, 241, 0.15);
+  background: #0c0c0e;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+}
+
+/* -------------------------------------------------------------
+ * Excel-like spreadsheet tables
+ * ----------------------------------------------------------- */
+.xl-wrap {
+  border: 1px solid var(--border-grid);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-card);
+  margin-bottom: 14px;
+}
+
+.xl-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  table-layout: fixed;
+}
+
+.xl-table th {
+  background: var(--bg-header-row);
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: left;
+  padding: 7px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid var(--border-grid);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.xl-table th:last-child,
+.xl-table td:last-child {
+  border-right: none;
+}
+
+.xl-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-grid);
+  border-right: 1px solid var(--border-grid);
+  color: var(--text-secondary);
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  height: 34px;
+}
+
+.xl-table tbody tr:nth-child(even) {
+  background: var(--bg-row-alt);
+}
+
+.xl-table tbody tr:nth-child(odd) {
+  background: var(--bg-row);
+}
+
+.xl-table tbody tr:hover {
+  background: var(--bg-row-hover);
+}
+
+.xl-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.xl-group-row {
+  background: #0e0e12 !important;
+  cursor: pointer;
+  user-select: none;
+}
+
+.xl-group-row:hover {
+  background: #141418 !important;
+}
+
+.xl-group-row td {
+  font-weight: 700;
+  color: var(--text-primary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.xl-dept-row {
+  background: #0b0b0f !important;
+}
+
+.xl-dept-row td {
+  color: #c4c4cc;
+  font-weight: 600;
+  font-size: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.xl-cell-name {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.xl-cell-muted {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.xl-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: var(--radius-sm);
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.5;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.xl-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  padding: 0;
+}
+
+.xl-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+}
+
+.xl-icon-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.xl-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
 }
 
 /* Header & Gradient Text */
@@ -228,45 +381,44 @@ input, textarea, select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 8px 16px;
-  font-size: 0.875rem;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
   font-weight: 600;
   border-radius: var(--radius-md);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
   white-space: nowrap;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
-  color: #ffffff;
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+  background: rgba(99, 102, 241, 0.2);
+  color: #c7d2fe;
+  border: 1px solid rgba(99, 102, 241, 0.45);
+  box-shadow: none;
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, #4f46e5, #7c3aed);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+  background: rgba(99, 102, 241, 0.32);
+  transform: none;
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
   border: 1px solid var(--border-subtle);
 }
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
   border-color: var(--border-hover);
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .btn-danger {
-  background: rgba(239, 68, 68, 0.15);
+  background: rgba(239, 68, 68, 0.12);
   color: #fca5a5;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(239, 68, 68, 0.28);
 }
 .btn-danger:hover {
-  background: rgba(239, 68, 68, 0.25);
-  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(239, 68, 68, 0.2);
 }
 
 /* Input Fields */
@@ -274,15 +426,15 @@ input, textarea, select {
   width: 100%;
   background: var(--bg-input);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
   color: var(--text-primary);
-  font-size: 0.875rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  font-size: 0.82rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .input-field:focus {
-  border-color: #818cf8;
-  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.15);
 }
 .input-field::placeholder {
   color: var(--text-muted);

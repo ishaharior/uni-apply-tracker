@@ -79,8 +79,8 @@ export function UniversityModal({
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(5, 8, 16, 0.8)',
-        backdropFilter: 'blur(8px)',
+        background: 'rgba(0, 0, 0, 0.78)',
+        backdropFilter: 'none',
         zIndex: 100,
         display: 'flex',
         alignItems: 'center',
@@ -93,15 +93,15 @@ export function UniversityModal({
         className="glass-modal animate-modal"
         style={{
           width: '100%',
-          maxWidth: '520px',
-          padding: '28px',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Building2 size={22} color="#818cf8" />
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+        maxWidth: '520px',
+        padding: '16px',
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Building2 size={18} color="#818cf8" />
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
               {editingUniversity ? 'Edit University' : 'Add New University'}
             </h3>
           </div>
@@ -324,8 +324,8 @@ export function DepartmentModal({
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(5, 8, 16, 0.8)',
-        backdropFilter: 'blur(8px)',
+        background: 'rgba(0, 0, 0, 0.78)',
+        backdropFilter: 'none',
         zIndex: 100,
         display: 'flex',
         alignItems: 'center',
@@ -341,19 +341,19 @@ export function DepartmentModal({
           maxWidth: '540px',
           maxHeight: '92vh',
           overflowY: 'auto',
-          padding: '28px',
+          padding: '16px',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <School size={20} color="#c084fc" />
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+              <School size={16} color="#c084fc" />
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
                 {editingDepartment ? 'Edit Department' : 'Add New Department'}
               </h3>
             </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
               Under {universityName}
             </p>
           </div>
@@ -589,8 +589,8 @@ export function ProfessorModal({
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(5, 8, 16, 0.8)',
-        backdropFilter: 'blur(8px)',
+        background: 'rgba(0, 0, 0, 0.78)',
+        backdropFilter: 'none',
         zIndex: 100,
         display: 'flex',
         alignItems: 'center',
@@ -606,19 +606,19 @@ export function ProfessorModal({
           maxWidth: '560px',
           maxHeight: '92vh',
           overflowY: 'auto',
-          padding: '28px',
+          padding: '16px',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <UserPlus size={20} color="#38bdf8" />
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+              <UserPlus size={16} color="#38bdf8" />
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
                 {editingProfessor ? 'Edit Professor' : 'Add New Professor'}
               </h3>
             </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
               Adding to {departmentName}
             </p>
           </div>

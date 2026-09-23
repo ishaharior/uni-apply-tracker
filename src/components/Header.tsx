@@ -37,8 +37,8 @@ export default function Header({
     <header
       style={{
         borderBottom: '1px solid var(--border-subtle)',
-        background: 'rgba(9, 13, 22, 0.85)',
-        backdropFilter: 'blur(20px)',
+        background: '#050506',
+        backdropFilter: 'none',
         position: 'sticky',
         top: 0,
         zIndex: 40,
@@ -48,33 +48,32 @@ export default function Header({
         style={{
           maxWidth: '1440px',
           margin: '0 auto',
-          padding: '16px 24px',
+          padding: '8px 16px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '16px',
+          gap: '10px',
         }}
       >
         {/* Brand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div
             style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: 'var(--radius-md)',
+              width: '32px',
+              height: '32px',
+              borderRadius: 'var(--radius-sm)',
               background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 20px rgba(99, 102, 241, 0.4)',
             }}
           >
-            <GraduationCap size={26} color="#ffffff" />
+            <GraduationCap size={18} color="#ffffff" />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h1 style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+              <h1 style={{ fontSize: '0.98rem', fontWeight: 700, letterSpacing: '-0.02em', margin: 0 }}>
                 UniApply <span className="brand-text">Tracker</span>
               </h1>
               <span
@@ -106,19 +105,19 @@ export default function Header({
               gap: '10px',
               background: 'rgba(15, 23, 42, 0.8)',
               border: `1px solid ${me.color}44`,
-              borderRadius: 'var(--radius-full)',
-              padding: '5px 14px 5px 6px',
-              boxShadow: `0 0 16px ${me.glowColor}`,
+              borderRadius: 'var(--radius-sm)',
+              padding: '4px 10px 4px 4px',
+              boxShadow: 'none',
             }}
           >
             <span
               style={{
-                width: '28px',
-                height: '28px',
+                width: '24px',
+                height: '24px',
                 borderRadius: '50%',
                 background: me.color,
-                color: '#090d16',
-                fontSize: '0.8rem',
+                color: '#000',
+                fontSize: '0.7rem',
                 fontWeight: 800,
                 display: 'flex',
                 alignItems: 'center',
@@ -128,27 +127,27 @@ export default function Header({
               {me.avatar}
             </span>
             <div style={{ lineHeight: 1.15 }}>
-              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: me.color }}>{me.name}</div>
-              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>@{me.username}</div>
+              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: me.color }}>{me.name}</div>
+              <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>@{me.username}</div>
             </div>
           </div>
 
           <button
             className="btn btn-primary"
             onClick={onOpenAddUniversity}
-            style={{ fontSize: '0.82rem', padding: '8px 14px' }}
+            style={{ fontSize: '0.78rem', padding: '6px 10px' }}
           >
-            <Plus size={16} />
-            <span>Add University</span>
+            <Plus size={14} />
+            <span>University</span>
           </button>
 
           <button
             className="btn btn-secondary"
             onClick={onOpenTemplates}
             title="Cold email templates"
-            style={{ fontSize: '0.82rem', padding: '8px 12px' }}
+            style={{ fontSize: '0.78rem', padding: '6px 9px' }}
           >
-            <Mail size={15} color="#c084fc" />
+            <Mail size={14} color="#c084fc" />
             <span>Templates</span>
           </button>
 
@@ -156,22 +155,22 @@ export default function Header({
             className="btn btn-secondary"
             onClick={onOpenActivity}
             title="My Recent Activity Log"
-            style={{ fontSize: '0.82rem', padding: '8px 12px', position: 'relative' }}
+            style={{ fontSize: '0.78rem', padding: '6px 9px', position: 'relative' }}
           >
-            <Activity size={15} color="#38bdf8" />
+            <Activity size={14} color="#38bdf8" />
             <span>Timeline</span>
             {activityCount > 0 && (
               <span
                 style={{
                   position: 'absolute',
-                  top: '-4px',
-                  right: '-4px',
+                  top: '-5px',
+                  right: '-5px',
                   background: '#6366f1',
                   color: '#ffffff',
-                  fontSize: '0.65rem',
+                  fontSize: '0.62rem',
                   fontWeight: 700,
                   borderRadius: 'var(--radius-full)',
-                  padding: '2px 6px',
+                  padding: '1px 5px',
                 }}
               >
                 {activityCount}
@@ -183,27 +182,27 @@ export default function Header({
             className="btn btn-secondary"
             onClick={onExportData}
             title="Export Backup (JSON)"
-            style={{ fontSize: '0.82rem', padding: '8px 12px' }}
+            style={{ fontSize: '0.78rem', padding: '6px 8px' }}
           >
-            <Download size={15} />
+            <Download size={14} />
           </button>
 
           <button
             className="btn btn-secondary"
             onClick={onResetDemoData}
             title="Reset to Demo Data"
-            style={{ fontSize: '0.82rem', padding: '8px 10px', color: 'var(--text-muted)' }}
+            style={{ fontSize: '0.78rem', padding: '6px 8px', color: 'var(--text-muted)' }}
           >
-            <RotateCcw size={14} />
+            <RotateCcw size={13} />
           </button>
 
           <button
             className="btn btn-secondary"
             onClick={onLogout}
             title="Log out"
-            style={{ fontSize: '0.82rem', padding: '8px 12px', color: '#fca5a5' }}
+            style={{ fontSize: '0.78rem', padding: '6px 9px', color: '#fca5a5' }}
           >
-            <LogOut size={15} />
+            <LogOut size={14} />
             <span>Logout</span>
           </button>
         </div>

@@ -23,8 +23,8 @@ export default function ActivityModal({ isOpen, onClose, logs, me }: ActivityMod
         left: 0,
         right: 0,
         bottom: 0,
-        background: 'rgba(5, 8, 16, 0.8)',
-        backdropFilter: 'blur(8px)',
+        background: 'rgba(0, 0, 0, 0.78)',
+        backdropFilter: 'none',
         zIndex: 100,
         display: 'flex',
         alignItems: 'center',
@@ -40,64 +40,55 @@ export default function ActivityModal({ isOpen, onClose, logs, me }: ActivityMod
           maxWidth: '560px',
           maxHeight: '85vh',
           overflowY: 'auto',
-          padding: '28px',
+          padding: '16px',
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Activity size={22} color="#38bdf8" />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Activity size={16} color="#38bdf8" />
             <div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
                 My Activity Timeline
               </h3>
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
                 Private to {me.name} · {logs.length} event{logs.length === 1 ? '' : 's'}
               </span>
             </div>
           </div>
           <button
             onClick={onClose}
-            style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '50%',
-              width: '32px',
-              height: '32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--text-muted)',
-            }}
+            className="xl-icon-btn"
+            style={{ width: '28px', height: '28px' }}
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
         {logs && logs.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
             {logs.map((log) => (
               <div
                 key={log.id}
                 style={{
                   display: 'flex',
                   alignItems: 'flex-start',
-                  gap: '12px',
-                  padding: '12px 14px',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'rgba(15, 23, 42, 0.7)',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  gap: '10px',
+                  padding: '8px 10px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: '#0e0e12',
+                  border: '1px solid var(--border-grid)',
                 }}
               >
                 <div
                   style={{
-                    width: '32px',
-                    height: '32px',
+                    width: '26px',
+                    height: '26px',
                     borderRadius: '50%',
                     background: me.color,
-                    color: '#090d16',
+                    color: '#000',
                     fontWeight: 800,
-                    fontSize: '0.85rem',
+                    fontSize: '0.7rem',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -108,11 +99,11 @@ export default function ActivityModal({ isOpen, onClose, logs, me }: ActivityMod
                 </div>
 
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.84rem', color: '#f1f5f9', lineHeight: 1.4 }}>
+                  <div style={{ fontSize: '0.78rem', color: '#d4d4da', lineHeight: 1.4 }}>
                     {log.description}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    <Clock size={12} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    <Clock size={11} />
                     <span>{formatDate(log.timestamp)}</span>
                   </div>
                 </div>
@@ -120,7 +111,7 @@ export default function ActivityModal({ isOpen, onClose, logs, me }: ActivityMod
             ))}
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+          <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
             No recent activity recorded yet.
           </div>
         )}
