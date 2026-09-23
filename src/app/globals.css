@@ -111,6 +111,17 @@ button {
 input, textarea, select {
   font-family: inherit;
   outline: none;
+  cursor: text;
+  caret-color: #a5b4fc;
+}
+
+select {
+  cursor: pointer;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 2.5em;
 }
 
 /* Custom Scrollbar */

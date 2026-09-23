@@ -760,10 +760,11 @@ export function ProfessorModal({
             </label>
             <textarea
               className="input-field"
-              rows={2}
+              rows={3}
               placeholder="Recent papers of interest, grants, lab advice for cold outreach..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              style={{ cursor: 'text', caretColor: '#a5b4fc', resize: 'vertical', minHeight: '64px' }}
             />
           </div>
 
