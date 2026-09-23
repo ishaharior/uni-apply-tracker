@@ -19,6 +19,7 @@ interface ProfessorRowProps {
   professor: Professor;
   me: User;
   onOpenStatusModal: (professor: Professor) => void;
+  onOpenDetail: (professor: Professor) => void;
   onEditProfessor: (professor: Professor) => void;
   onDeleteProfessor: (professorId: string) => void;
   onToggleVisibility: (professor: Professor) => void;
@@ -29,6 +30,7 @@ export default function ProfessorRow({
   professor,
   me,
   onOpenStatusModal,
+  onOpenDetail,
   onEditProfessor,
   onDeleteProfessor,
   onToggleVisibility,
@@ -53,8 +55,28 @@ export default function ProfessorRow({
 
   return (
     <tr>
-      <td className="xl-cell-name" title={professor.name}>
-        {professor.name}
+      <td className="xl-cell-name" title={`${professor.name} — click for details`}>
+        <button
+          type="button"
+          onClick={() => onOpenDetail(professor)}
+          style={{
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            margin: 0,
+            font: 'inherit',
+            color: 'var(--text-primary)',
+            fontWeight: 600,
+            cursor: 'pointer',
+            textAlign: 'left',
+            width: '100%',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {professor.name}
+        </button>
       </td>
       <td className="xl-cell-muted" title={professor.title}>
         {professor.title}

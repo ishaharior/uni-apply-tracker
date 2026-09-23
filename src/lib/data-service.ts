@@ -127,6 +127,7 @@ export async function getAppData(user: User | UserRow): Promise<AppData> {
     ieltsReq: c.ieltsReq,
     lastDate: c.lastDate,
     applicationLink: c.applicationLink,
+    description: c.description ?? '',
     visibility: (c.visibility === 'public' ? 'public' : 'private') as MastersCourse['visibility'],
     ownerId: c.ownerId ?? undefined,
     ownerName: c.owner?.name,

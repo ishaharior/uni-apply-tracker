@@ -14,6 +14,7 @@ interface DepartmentSectionProps {
   onToggleExpand: () => void;
   onOpenAddProfessor: (universityId: string, departmentId: string) => void;
   onOpenStatusModal: (professor: Professor) => void;
+  onOpenDetail: (professor: Professor) => void;
   onEditProfessor: (professor: Professor) => void;
   onDeleteProfessor: (professorId: string) => void;
   onToggleVisibility: (professor: Professor) => void;
@@ -30,6 +31,7 @@ export default function DepartmentSection({
   onToggleExpand,
   onOpenAddProfessor,
   onOpenStatusModal,
+  onOpenDetail,
   onEditProfessor,
   onDeleteProfessor,
   onToggleVisibility,
@@ -160,6 +162,7 @@ export default function DepartmentSection({
                     professor={prof}
                     me={me}
                     onOpenStatusModal={onOpenStatusModal}
+                    onOpenDetail={onOpenDetail}
                     onEditProfessor={onEditProfessor}
                     onDeleteProfessor={onDeleteProfessor}
                     onToggleVisibility={onToggleVisibility}

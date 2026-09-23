@@ -20,6 +20,7 @@ interface MastersCoursesSectionProps {
   onSave: (data: Partial<MastersCourse>, editingId?: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onToggleVisibility: (course: MastersCourse) => Promise<void>;
+  onOpenDetail: (course: MastersCourse) => void;
 }
 
 const emptyForm = {
@@ -28,6 +29,7 @@ const emptyForm = {
   ieltsReq: '',
   lastDate: '',
   applicationLink: '',
+  description: '',
 };
 
 export default function MastersCoursesSection({
@@ -37,6 +39,7 @@ export default function MastersCoursesSection({
   onSave,
   onDelete,
   onToggleVisibility,
+  onOpenDetail,
 }: MastersCoursesSectionProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -62,6 +65,7 @@ export default function MastersCoursesSection({
       ieltsReq: course.ieltsReq,
       lastDate: course.lastDate,
       applicationLink: course.applicationLink,
+      description: course.description || '',
     });
     setFormOpen(true);
   };
@@ -200,6 +204,19 @@ export default function MastersCoursesSection({
               placeholder="https://..."
             />
           </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '3px' }}>
+              Description
+            </label>
+            <textarea
+              className="input-field"
+              rows={3}
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="Notes about this program, scholarship info, contact tips..."
+              style={{ cursor: 'text', caretColor: '#a5b4fc', resize: 'vertical', minHeight: '64px' }}
+            />
+          </div>
           <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
             <button
               type="button"
@@ -257,16 +274,55 @@ export default function MastersCoursesSection({
                   const isOwner = course.isMine || course.ownerId === me.id;
                   return (
                     <tr key={course.id}>
-                      <td className="xl-cell-name" title={course.universityName}>
-                        {course.universityName}
+                      <td className="xl-cell-name" title={`${course.universityName} — click for details`}>
+                        <button
+                          type="button"
+                          onClick={() => onOpenDetail(course)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            margin: 0,
+                            font: 'inherit',
+                            color: 'var(--text-primary)',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            maxWidth: '100%',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {course.universityName}
+                        </button>
                         {!isOwner && course.ownerName && (
                           <span className="xl-cell-muted" style={{ marginLeft: 6, fontWeight: 400 }}>
                             · {course.ownerName}
                           </span>
                         )}
                       </td>
-                      <td className="xl-cell-muted" title={course.departmentName}>
-                        {course.departmentName}
+                      <td className="xl-cell-muted" title={`${course.departmentName} — click for details`}>
+                        <button
+                          type="button"
+                          onClick={() => onOpenDetail(course)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            margin: 0,
+                            font: 'inherit',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            maxWidth: '100%',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {course.departmentName}
+                        </button>
                       </td>
                       <td title={course.ieltsReq}>{course.ieltsReq || '—'}</td>
                       <td title={course.lastDate}>{course.lastDate || '—'}</td>

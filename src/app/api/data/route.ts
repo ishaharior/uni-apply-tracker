@@ -392,6 +392,7 @@ export async function POST(req: NextRequest) {
             ieltsReq: String(p.ieltsReq ?? '').trim(),
             lastDate: String(p.lastDate ?? '').trim(),
             applicationLink: String(p.applicationLink ?? '').trim(),
+            description: String(p.description ?? '').trim(),
             visibility: p.visibility === 'public' ? 'public' : 'private',
             ownerId: user.id,
           },
@@ -429,6 +430,9 @@ export async function POST(req: NextRequest) {
             ...(updates.lastDate !== undefined ? { lastDate: String(updates.lastDate).trim() } : {}),
             ...(updates.applicationLink !== undefined
               ? { applicationLink: String(updates.applicationLink).trim() }
+              : {}),
+            ...(updates.description !== undefined
+              ? { description: String(updates.description).trim() }
               : {}),
             ...(updates.visibility !== undefined
               ? { visibility: updates.visibility === 'public' ? 'public' : 'private' }

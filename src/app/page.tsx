@@ -17,6 +17,7 @@ import {
 } from '@/components/EntityModals';
 import EmailTemplatesModal from '@/components/EmailTemplatesModal';
 import ActivityModal from '@/components/ActivityModal';
+import DetailModal from '@/components/DetailModal';
 import { Plus, Building2, RefreshCw, List, Globe2, GraduationCap } from 'lucide-react';
 
 export default function HomePage() {
@@ -80,6 +81,10 @@ export default function HomePage() {
 
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
+  const [detailModal, setDetailModal] = useState<{
+    professor: Professor | null;
+    course: MastersCourse | null;
+  }>({ professor: null, course: null });
 
   const handleLogout = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -617,6 +622,7 @@ export default function HomePage() {
             onSave={handleSaveMastersCourse}
             onDelete={handleDeleteMastersCourse}
             onToggleVisibility={handleToggleMastersVisibility}
+            onOpenDetail={(course) => setDetailModal({ professor: null, course })}
           />
         )}
 
@@ -639,6 +645,7 @@ export default function HomePage() {
             onSave={handleSaveMastersCourse}
             onDelete={handleDeleteMastersCourse}
             onToggleVisibility={handleToggleMastersVisibility}
+            onOpenDetail={(course) => setDetailModal({ professor: null, course })}
           />
         )}
 
@@ -756,6 +763,7 @@ export default function HomePage() {
                             professor,
                           })
                         }
+                        onOpenDetail={(professor) => setDetailModal({ professor, course: null })}
                         onEditUniversity={(targetUni) =>
                           setUniModal({ isOpen: true, editingUniversity: targetUni })
                         }
@@ -893,6 +901,13 @@ export default function HomePage() {
         onClose={() => setActivityOpen(false)}
         logs={data.activityLogs || []}
         me={me}
+      />
+
+      {/* 7. Detail Modal (professor / masters course description) */}
+      <DetailModal
+        professor={detailModal.professor}
+        course={detailModal.course}
+        onClose={() => setDetailModal({ professor: null, course: null })}
       />
     </div>
   );

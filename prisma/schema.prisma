@@ -97,6 +97,7 @@ model MastersCourse {
   ieltsReq        String   @default("")
   lastDate        String   @default("")
   applicationLink String   @default("")
+  description     String   @default("")
   visibility      String   @default("private")
   ownerId         String?
   owner           User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)

@@ -92,6 +92,7 @@ export interface MastersCourse {
   ieltsReq: string;
   lastDate: string;
   applicationLink: string;
+  description?: string;
   visibility: 'public' | 'private';
   ownerId?: string;
   ownerName?: string;
