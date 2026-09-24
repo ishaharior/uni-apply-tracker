@@ -11,7 +11,10 @@ import {
   Lock,
   ExternalLink,
   X,
+  PlusCircle,
+  Check,
 } from 'lucide-react';
+import { getCourseStatusMeta } from '@/lib/utils';
 
 interface MastersCoursesSectionProps {
   courses: MastersCourse[];
@@ -21,6 +24,8 @@ interface MastersCoursesSectionProps {
   onDelete: (id: string) => Promise<void>;
   onToggleVisibility: (course: MastersCourse) => Promise<void>;
   onOpenDetail: (course: MastersCourse) => void;
+  onToggleList: (course: MastersCourse) => void;
+  onOpenStatus: (course: MastersCourse) => void;
 }
 
 interface MastersCourseForm {
@@ -51,6 +56,8 @@ export default function MastersCoursesSection({
   onDelete,
   onToggleVisibility,
   onOpenDetail,
+  onToggleList,
+  onOpenStatus,
 }: MastersCoursesSectionProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -59,7 +66,7 @@ export default function MastersCoursesSection({
 
   const visible =
     mode === 'manage'
-      ? courses.filter((c) => c.isMine || c.ownerId === me.id)
+      ? courses.filter((c) => c.isMine || c.ownerId === me.id || c.onMyList)
       : courses.filter((c) => c.visibility === 'public');
 
   const openAdd = () => {
@@ -116,8 +123,8 @@ export default function MastersCoursesSection({
             </h2>
             <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '1px 0 0' }}>
               {mode === 'manage'
-                ? 'Set each course Public or Private when adding — toggle anytime from the list'
-                : 'Shared by other users — public Master’s courses'}
+                ? 'Your courses + ones you added from Public — set your private status per course'
+                : 'Shared by other users — click Add to track a course on your list'}
             </p>
           </div>
         </div>
@@ -284,13 +291,15 @@ export default function MastersCoursesSection({
             <table className="xl-table">
               <thead>
                 <tr>
-                  <th style={{ width: '24%' }}>University</th>
-                  <th style={{ width: '22%' }}>Department</th>
-                  <th style={{ width: '14%' }}>IELTS</th>
-                  <th style={{ width: '16%' }}>Last Date</th>
-                  <th style={{ width: '8%' }}>Vis</th>
-                  <th style={{ width: '6%' }}>Apply</th>
-                  <th style={{ width: mode === 'manage' ? '10%' : '0%', display: mode === 'manage' ? undefined : 'none' }}>
+                  <th style={{ width: '19%' }}>University</th>
+                  <th style={{ width: '17%' }}>Department</th>
+                  <th style={{ width: '10%' }}>IELTS</th>
+                  <th style={{ width: '12%' }}>Last Date</th>
+                  <th style={{ width: '12%' }}>My Status</th>
+                  <th style={{ width: '8%' }}>List</th>
+                  <th style={{ width: '6%' }}>Vis</th>
+                  <th style={{ width: '5%' }}>Apply</th>
+                  <th style={{ width: mode === 'manage' ? '11%' : '0%', display: mode === 'manage' ? undefined : 'none' }}>
                     Actions
                   </th>
                 </tr>
@@ -298,6 +307,8 @@ export default function MastersCoursesSection({
               <tbody>
                 {visible.map((course) => {
                   const isOwner = course.isMine || course.ownerId === me.id;
+                  const isOnList = Boolean(course.onMyList);
+                  const statusMeta = getCourseStatusMeta(course.myStatus);
                   return (
                     <tr key={course.id}>
                       <td className="xl-cell-name" title={`${course.universityName} — click for details`}>
@@ -352,6 +363,69 @@ export default function MastersCoursesSection({
                       </td>
                       <td title={course.ieltsReq}>{course.ieltsReq || '—'}</td>
                       <td title={course.lastDate}>{course.lastDate || '—'}</td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => onOpenStatus(course)}
+                          className="xl-chip"
+                          style={{
+                            color: statusMeta.color,
+                            background: statusMeta.bg,
+                            borderColor: statusMeta.border,
+                            cursor: 'pointer',
+                          }}
+                          title={`${statusMeta.label} — click to update your private application status`}
+                        >
+                          {statusMeta.icon} {statusMeta.shortLabel}
+                        </button>
+                      </td>
+                      <td>
+                        {isOwner ? (
+                          <span
+                            className="xl-chip"
+                            style={{
+                              color: '#d8b4fe',
+                              background: 'rgba(168,85,247,0.1)',
+                              borderColor: 'rgba(168,85,247,0.3)',
+                            }}
+                            title="Your course"
+                          >
+                            Yours
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => onToggleList(course)}
+                            className="xl-chip"
+                            style={
+                              isOnList
+                                ? {
+                                    color: '#34d399',
+                                    background: 'rgba(16,185,129,0.1)',
+                                    borderColor: 'rgba(16,185,129,0.3)',
+                                    cursor: 'pointer',
+                                  }
+                                : {
+                                    color: '#a5b4fc',
+                                    background: 'rgba(99,102,241,0.12)',
+                                    borderColor: 'rgba(99,102,241,0.35)',
+                                    cursor: 'pointer',
+                                  }
+                            }
+                            title={isOnList ? 'On your list — click to remove' : 'Add to your list'}
+                          >
+                            {isOnList ? (
+                              <>
+                                <Check size={11} /> On list
+                              </>
+                            ) : (
+                              <>
+                                <PlusCircle size={11} /> Add
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </td>
                       <td>
                         {course.visibility === 'public' ? (
                           <span

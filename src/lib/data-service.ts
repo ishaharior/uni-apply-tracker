@@ -52,7 +52,13 @@ export async function getAppData(user: User | UserRow): Promise<AppData> {
     prisma.mastersCourse.findMany({
       where: { OR: [{ ownerId: user.id }, { visibility: 'public' }] },
       orderBy: { updatedAt: 'desc' },
-      include: { owner: { select: { name: true } } },
+      include: {
+        owner: { select: { name: true } },
+        bookmarks: {
+          where: { userId: user.id },
+          select: { status: true },
+        },
+      },
     }),
   ]);
 
@@ -132,6 +138,8 @@ export async function getAppData(user: User | UserRow): Promise<AppData> {
     ownerId: c.ownerId ?? undefined,
     ownerName: c.owner?.name,
     isMine: c.ownerId === user.id,
+    onMyList: c.ownerId === user.id || c.bookmarks.length > 0,
+    myStatus: (c.bookmarks[0]?.status ?? undefined) as MastersCourse['myStatus'],
     createdAt: c.createdAt.toISOString(),
     updatedAt: c.updatedAt.toISOString(),
   }));

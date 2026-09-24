@@ -97,9 +97,28 @@ export interface MastersCourse {
   ownerId?: string;
   ownerName?: string;
   isMine?: boolean;
+  onMyList?: boolean;
+  myStatus?: CourseApplicationStatus;
   createdAt: string;
   updatedAt: string;
 }
+
+export type CourseApplicationStatus =
+  | 'interested'
+  | 'preparing'
+  | 'applied'
+  | 'interview'
+  | 'offer'
+  | 'rejected';
+
+export const COURSE_APPLICATION_STATUSES: CourseApplicationStatus[] = [
+  'interested',
+  'preparing',
+  'applied',
+  'interview',
+  'offer',
+  'rejected',
+];
 
 export type ActivityAction =
   | 'added_university'

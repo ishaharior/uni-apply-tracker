@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { AppData, University, Department, Professor, FilterOptions, OutreachRecord, MastersCourse } from '@/types';
+import { AppData, University, Department, Professor, FilterOptions, OutreachRecord, MastersCourse, CourseApplicationStatus } from '@/types';
 import { isOverdueFollowup, getCountryFlag } from '@/lib/utils';
 import Header from '@/components/Header';
 import StatsDashboard from '@/components/StatsDashboard';
 import FilterBar from '@/components/FilterBar';
 import UniversityCard from '@/components/UniversityCard';
 import StatusModal from '@/components/StatusModal';
+import MastersCourseStatusModal from '@/components/MastersCourseStatusModal';
 import MastersCoursesSection from '@/components/MastersCoursesSection';
 import {
   UniversityModal,
@@ -86,6 +87,11 @@ export default function HomePage() {
     professor: Professor | null;
     course: MastersCourse | null;
   }>({ professor: null, course: null });
+
+  const [courseStatusModal, setCourseStatusModal] = useState<{
+    isOpen: boolean;
+    course: MastersCourse | null;
+  }>({ isOpen: false, course: null });
 
   const handleLogout = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -424,6 +430,18 @@ export default function HomePage() {
     await dispatchAction('TOGGLE_MASTERS_COURSE_VISIBILITY', { id: course.id });
   };
 
+  const handleToggleMastersList = async (course: MastersCourse) => {
+    if (course.onMyList && !course.isMine) {
+      await dispatchAction('REMOVE_MASTERS_FROM_LIST', { courseId: course.id });
+    } else {
+      await dispatchAction('ADD_MASTERS_TO_LIST', { courseId: course.id });
+    }
+  };
+
+  const handleSaveMastersStatus = async (courseId: string, status: CourseApplicationStatus) => {
+    await dispatchAction('UPDATE_MASTERS_STATUS', { courseId, status });
+  };
+
   const handleExportData = () => {
     if (!data) return;
     const legacy = {
@@ -624,6 +642,8 @@ export default function HomePage() {
             onDelete={handleDeleteMastersCourse}
             onToggleVisibility={handleToggleMastersVisibility}
             onOpenDetail={(course) => setDetailModal({ professor: null, course })}
+            onToggleList={handleToggleMastersList}
+            onOpenStatus={(course) => setCourseStatusModal({ isOpen: true, course })}
           />
         )}
 
@@ -647,6 +667,8 @@ export default function HomePage() {
             onDelete={handleDeleteMastersCourse}
             onToggleVisibility={handleToggleMastersVisibility}
             onOpenDetail={(course) => setDetailModal({ professor: null, course })}
+            onToggleList={handleToggleMastersList}
+            onOpenStatus={(course) => setCourseStatusModal({ isOpen: true, course })}
           />
         )}
 
@@ -858,6 +880,15 @@ export default function HomePage() {
         me={me}
         onClose={() => setStatusModal({ isOpen: false, professor: null })}
         onSaveStatus={handleSaveStatus}
+      />
+
+      {/* 1b. Master's course application status modal */}
+      <MastersCourseStatusModal
+        isOpen={courseStatusModal.isOpen}
+        course={courseStatusModal.course}
+        me={me}
+        onClose={() => setCourseStatusModal({ isOpen: false, course: null })}
+        onSaveStatus={handleSaveMastersStatus}
       />
 
       {/* 2. University Modal */}

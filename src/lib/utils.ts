@@ -1,4 +1,4 @@
-import { OutreachStatusType } from '@/types';
+import { CourseApplicationStatus, COURSE_APPLICATION_STATUSES, OutreachStatusType } from '@/types';
 
 export interface StatusMeta {
   label: string;
@@ -105,6 +105,75 @@ export const STATUS_MAP: Record<OutreachStatusType, StatusMeta> = {
 
 export function getStatusMeta(status: OutreachStatusType): StatusMeta {
   return STATUS_MAP[status] || STATUS_MAP.not_contacted;
+}
+
+export const COURSE_STATUS_MAP: Record<CourseApplicationStatus, StatusMeta> = {
+  interested: {
+    label: 'Interested',
+    shortLabel: 'Interested',
+    color: '#94a3b8',
+    bg: 'rgba(148, 163, 184, 0.08)',
+    border: 'rgba(148, 163, 184, 0.25)',
+    glow: 'rgba(148, 163, 184, 0.1)',
+    icon: '🔖',
+  },
+  preparing: {
+    label: 'Preparing Docs',
+    shortLabel: 'Preparing',
+    color: '#c084fc',
+    bg: 'rgba(192, 132, 252, 0.12)',
+    border: 'rgba(192, 132, 252, 0.3)',
+    glow: 'rgba(192, 132, 252, 0.25)',
+    icon: '📝',
+  },
+  applied: {
+    label: 'Application Submitted',
+    shortLabel: 'Applied',
+    color: '#818cf8',
+    bg: 'rgba(129, 140, 248, 0.15)',
+    border: 'rgba(129, 140, 248, 0.4)',
+    glow: 'rgba(129, 140, 248, 0.25)',
+    icon: '🎯',
+  },
+  interview: {
+    label: 'Interview / Test',
+    shortLabel: 'Interview',
+    color: '#ec4899',
+    bg: 'rgba(236, 72, 153, 0.15)',
+    border: 'rgba(236, 72, 153, 0.4)',
+    glow: 'rgba(236, 72, 153, 0.35)',
+    icon: '🤝',
+  },
+  offer: {
+    label: 'Offer Received',
+    shortLabel: 'Offer',
+    color: '#fbbf24',
+    bg: 'rgba(251, 191, 36, 0.18)',
+    border: 'rgba(251, 191, 36, 0.5)',
+    glow: 'rgba(251, 191, 36, 0.4)',
+    icon: '🏆',
+  },
+  rejected: {
+    label: 'Rejected',
+    shortLabel: 'Rejected',
+    color: '#ef4444',
+    bg: 'rgba(239, 68, 68, 0.12)',
+    border: 'rgba(239, 68, 68, 0.3)',
+    glow: 'rgba(239, 68, 68, 0.15)',
+    icon: '⛔',
+  },
+};
+
+export const DEFAULT_COURSE_STATUS: CourseApplicationStatus = 'interested';
+
+export function getCourseStatusMeta(status?: CourseApplicationStatus): StatusMeta {
+  return (status && COURSE_STATUS_MAP[status]) || COURSE_STATUS_MAP.interested;
+}
+
+export function isCourseApplicationStatus(value: unknown): value is CourseApplicationStatus {
+  return (
+    typeof value === 'string' && (COURSE_APPLICATION_STATUSES as string[]).includes(value)
+  );
 }
 
 export const COUNTRY_FLAGS: Record<string, string> = {

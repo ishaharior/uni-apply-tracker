@@ -23,6 +23,7 @@ model User {
   professors   Professor[]
   bookmarks    ProfessorBookmark[]
   mastersCourses MastersCourse[]
+  mastersBookmarks MastersCourseBookmark[]
 }
 
 model University {
@@ -103,9 +104,24 @@ model MastersCourse {
   owner           User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  bookmarks       MastersCourseBookmark[]
 
   @@index([ownerId])
   @@index([visibility])
+}
+
+model MastersCourseBookmark {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId  String
+  course    MastersCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  status    String        @default("interested")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@unique([userId, courseId])
+  @@index([courseId])
 }
 
 model OutreachRecord {

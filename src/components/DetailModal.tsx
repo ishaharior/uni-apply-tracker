@@ -3,7 +3,7 @@
 import React from 'react';
 import { Professor, MastersCourse } from '@/types';
 import { X, User, GraduationCap, Globe, Lock, ExternalLink, BookOpen, Mail } from 'lucide-react';
-import { getStatusMeta, formatDate } from '@/lib/utils';
+import { getStatusMeta, getCourseStatusMeta, formatDate } from '@/lib/utils';
 
 interface DetailModalProps {
   professor?: Professor | null;
@@ -274,6 +274,21 @@ export default function DetailModal({ professor, course, onClose }: DetailModalP
               }
             />
             {course.ownerName && <Row label="Owner" value={course.ownerName} />}
+            <Row
+              label="My status"
+              value={
+                <span
+                  className="xl-chip"
+                  style={{
+                    color: getCourseStatusMeta(course.myStatus).color,
+                    background: getCourseStatusMeta(course.myStatus).bg,
+                    borderColor: getCourseStatusMeta(course.myStatus).border,
+                  }}
+                >
+                  {getCourseStatusMeta(course.myStatus).icon} {getCourseStatusMeta(course.myStatus).label}
+                </span>
+              }
+            />
             <DescriptionBlock text={course.description} title="Description" />
           </>
         )}

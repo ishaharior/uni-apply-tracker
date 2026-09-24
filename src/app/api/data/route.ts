@@ -6,6 +6,7 @@ import { getAppData, logActivity } from '@/lib/data-service';
 import { importDataset } from '@/lib/import-data';
 import { INITIAL_DATASET } from '@/lib/initial-data';
 import type { LegacyDataset } from '@/types';
+import { isCourseApplicationStatus } from '@/lib/utils';
 
 export async function GET() {
   try {
@@ -479,6 +480,84 @@ export async function POST(req: NextRequest) {
           'masters_course',
           `${user.name} set Master's course ${existing.universityName} to ${next}`,
           { universityName: existing.universityName, departmentName: existing.departmentName }
+        );
+        const appData = await getAppData(user);
+        return NextResponse.json({ success: true, data: appData });
+      }
+
+      case 'ADD_MASTERS_TO_LIST': {
+        const { courseId } = payload ?? {};
+        const course = await prisma.mastersCourse.findUnique({ where: { id: courseId } });
+        if (!course) {
+          return NextResponse.json({ success: false, error: 'Course not found' }, { status: 404 });
+        }
+        if (course.visibility !== 'public' && course.ownerId !== user.id) {
+          return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+        }
+        if (course.ownerId !== user.id) {
+          await prisma.mastersCourseBookmark.upsert({
+            where: { userId_courseId: { userId: user.id, courseId: course.id } },
+            create: { userId: user.id, courseId: course.id, status: 'interested' },
+            update: {},
+          });
+          await logActivity(
+            user.id,
+            'toggled_list',
+            `${user.name} added Master's course ${course.universityName} — ${course.departmentName} to their list`,
+            { universityName: course.universityName, departmentName: course.departmentName }
+          );
+        }
+        const appData = await getAppData(user);
+        return NextResponse.json({ success: true, data: appData });
+      }
+
+      case 'REMOVE_MASTERS_FROM_LIST': {
+        const { courseId } = payload ?? {};
+        const course = await prisma.mastersCourse.findUnique({ where: { id: courseId } });
+        if (!course) {
+          return NextResponse.json({ success: false, error: 'Course not found' }, { status: 404 });
+        }
+        if (course.ownerId === user.id) {
+          return NextResponse.json(
+            { success: false, error: 'Cannot remove your own course from your list' },
+            { status: 400 }
+          );
+        }
+        await prisma.mastersCourseBookmark.deleteMany({
+          where: { userId: user.id, courseId: course.id },
+        });
+        await logActivity(
+          user.id,
+          'toggled_list',
+          `${user.name} removed Master's course ${course.universityName} — ${course.departmentName} from their list`,
+          { universityName: course.universityName, departmentName: course.departmentName }
+        );
+        const appData = await getAppData(user);
+        return NextResponse.json({ success: true, data: appData });
+      }
+
+      case 'UPDATE_MASTERS_STATUS': {
+        const { courseId, status } = payload ?? {};
+        if (!isCourseApplicationStatus(status)) {
+          return NextResponse.json({ success: false, error: 'Invalid status' }, { status: 400 });
+        }
+        const course = await prisma.mastersCourse.findUnique({ where: { id: courseId } });
+        if (!course) {
+          return NextResponse.json({ success: false, error: 'Course not found' }, { status: 404 });
+        }
+        if (course.visibility !== 'public' && course.ownerId !== user.id) {
+          return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+        }
+        await prisma.mastersCourseBookmark.upsert({
+          where: { userId_courseId: { userId: user.id, courseId: course.id } },
+          create: { userId: user.id, courseId: course.id, status },
+          update: { status },
+        });
+        await logActivity(
+          user.id,
+          'masters_course',
+          `${user.name} set Master's course ${course.universityName} — ${course.departmentName} status to ${status}`,
+          { universityName: course.universityName, departmentName: course.departmentName }
         );
         const appData = await getAppData(user);
         return NextResponse.json({ success: true, data: appData });
