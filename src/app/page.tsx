@@ -18,13 +18,14 @@ import {
 import EmailTemplatesModal from '@/components/EmailTemplatesModal';
 import ActivityModal from '@/components/ActivityModal';
 import DetailModal from '@/components/DetailModal';
-import { Plus, Building2, RefreshCw, List, Globe2, GraduationCap } from 'lucide-react';
+import { Plus, Building2, RefreshCw, List, Globe2, GraduationCap, ChevronsDown } from 'lucide-react';
 
 export default function HomePage() {
   const router = useRouter();
   const [data, setData] = useState<AppData | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewTab, setViewTab] = useState<'my-list' | 'public' | 'masters'>('my-list');
+  const [collapseToken, setCollapseToken] = useState(0);
 
   // Filter State
   const [filters, setFilters] = useState<FilterOptions>({
@@ -652,6 +653,19 @@ export default function HomePage() {
         {/* Topology: Country → Universities (hidden on masters tab) */}
         {viewTab !== 'masters' && (groupedByCountry.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {/* Collapse all universities + departments */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ height: '28px', padding: '0 10px', fontSize: '0.72rem' }}
+                onClick={() => setCollapseToken((token) => token + 1)}
+                title="Collapse every university and department"
+              >
+                <ChevronsDown size={13} />
+                <span>Collapse all</span>
+              </button>
+            </div>
             {groupedByCountry.map(([country, unis]) => {
               const progress = countryProgress(unis);
               return (
@@ -739,6 +753,7 @@ export default function HomePage() {
                         university={uni}
                         me={me}
                         defaultExpanded={groupedByCountry.length === 1}
+                        collapseToken={collapseToken}
                         onOpenAddDepartment={(uniId) =>
                           setDeptModal({
                             isOpen: true,

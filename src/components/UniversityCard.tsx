@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { University, Department, Professor, User } from '@/types';
 import {
   Building2,
@@ -20,6 +20,7 @@ interface UniversityCardProps {
   university: University;
   me: User;
   defaultExpanded?: boolean;
+  collapseToken?: number;
   onOpenAddDepartment: (universityId: string) => void;
   onOpenAddProfessor: (universityId: string, departmentId: string) => void;
   onOpenStatusModal: (professor: Professor) => void;
@@ -38,6 +39,7 @@ export default function UniversityCard({
   university,
   me,
   defaultExpanded = true,
+  collapseToken = 0,
   onOpenAddDepartment,
   onOpenAddProfessor,
   onOpenStatusModal,
@@ -53,6 +55,16 @@ export default function UniversityCard({
 }: UniversityCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [openDepts, setOpenDepts] = useState<Record<string, boolean>>({});
+  const lastCollapseToken = useRef(collapseToken);
+
+  useEffect(() => {
+    if (collapseToken <= lastCollapseToken.current) return;
+    lastCollapseToken.current = collapseToken;
+    setExpanded(false);
+    setOpenDepts(
+      Object.fromEntries(university.departments.map((dept) => [dept.id, false]))
+    );
+  }, [collapseToken, university.departments]);
 
   let totalProfessors = 0;
   let myContacted = 0;
@@ -64,7 +76,7 @@ export default function UniversityCard({
   });
 
   const toggleDept = (id: string) =>
-    setOpenDepts((prev) => ({ ...prev, [id]: prev[id] === undefined ? true : !prev[id] }));
+    setOpenDepts((prev) => ({ ...prev, [id]: prev[id] === undefined ? false : !prev[id] }));
 
   return (
     <div className="xl-wrap" style={{ marginBottom: 12 }}>
