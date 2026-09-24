@@ -23,13 +23,24 @@ interface MastersCoursesSectionProps {
   onOpenDetail: (course: MastersCourse) => void;
 }
 
-const emptyForm = {
+interface MastersCourseForm {
+  universityName: string;
+  departmentName: string;
+  ieltsReq: string;
+  lastDate: string;
+  applicationLink: string;
+  description: string;
+  visibility: 'public' | 'private';
+}
+
+const emptyForm: MastersCourseForm = {
   universityName: '',
   departmentName: '',
   ieltsReq: '',
   lastDate: '',
   applicationLink: '',
   description: '',
+  visibility: 'public',
 };
 
 export default function MastersCoursesSection({
@@ -66,6 +77,7 @@ export default function MastersCoursesSection({
       lastDate: course.lastDate,
       applicationLink: course.applicationLink,
       description: course.description || '',
+      visibility: course.visibility === 'private' ? 'private' : 'public',
     });
     setFormOpen(true);
   };
@@ -104,7 +116,7 @@ export default function MastersCoursesSection({
             </h2>
             <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '1px 0 0' }}>
               {mode === 'manage'
-                ? 'Personal list — toggle Public to share with everyone'
+                ? 'Set each course Public or Private when adding — toggle anytime from the list'
                 : 'Shared by other users — public Master’s courses'}
             </p>
           </div>
@@ -191,6 +203,20 @@ export default function MastersCoursesSection({
               onChange={(e) => setForm({ ...form, lastDate: e.target.value })}
               placeholder="e.g. Dec 15, 2026"
             />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '3px' }}>
+              Visibility
+            </label>
+            <select
+              className="input-field"
+              value={form.visibility}
+              onChange={(e) => setForm({ ...form, visibility: e.target.value as 'public' | 'private' })}
+              style={{ cursor: 'pointer' }}
+            >
+              <option value="public">🌐 Public — all users can see this course</option>
+              <option value="private">🔒 Private — only you can see this course</option>
+            </select>
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={{ display: 'block', fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '3px' }}>
