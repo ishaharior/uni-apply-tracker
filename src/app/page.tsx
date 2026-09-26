@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { AppData, University, Department, Professor, FilterOptions, OutreachRecord, MastersCourse, CourseApplicationStatus } from '@/types';
+import { AppData, University, Department, Professor, FilterOptions, OutreachRecord, MastersCourse, CourseApplicationStatus, Scholarship } from '@/types';
 import { isOverdueFollowup, getCountryFlag } from '@/lib/utils';
 import Header from '@/components/Header';
 import StatsDashboard from '@/components/StatsDashboard';
@@ -11,6 +11,7 @@ import UniversityCard from '@/components/UniversityCard';
 import StatusModal from '@/components/StatusModal';
 import MastersCourseStatusModal from '@/components/MastersCourseStatusModal';
 import MastersCoursesSection from '@/components/MastersCoursesSection';
+import ScholarshipsSection from '@/components/ScholarshipsSection';
 import {
   UniversityModal,
   DepartmentModal,
@@ -19,13 +20,13 @@ import {
 import EmailTemplatesModal from '@/components/EmailTemplatesModal';
 import ActivityModal from '@/components/ActivityModal';
 import DetailModal from '@/components/DetailModal';
-import { Plus, Building2, RefreshCw, List, Globe2, GraduationCap, ChevronsDown } from 'lucide-react';
+import { Plus, Building2, RefreshCw, List, Globe2, GraduationCap, Award, ChevronsDown } from 'lucide-react';
 
 export default function HomePage() {
   const router = useRouter();
   const [data, setData] = useState<AppData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [viewTab, setViewTab] = useState<'my-list' | 'public' | 'masters'>('my-list');
+  const [viewTab, setViewTab] = useState<'my-list' | 'public' | 'masters' | 'scholarships'>('my-list');
   const [collapseToken, setCollapseToken] = useState(0);
 
   // Filter State
@@ -442,6 +443,29 @@ export default function HomePage() {
     await dispatchAction('UPDATE_MASTERS_STATUS', { courseId, status });
   };
 
+  const handleSaveScholarship = async (scholarshipData: Partial<Scholarship>, editingId?: string) => {
+    if (editingId) {
+      await dispatchAction('UPDATE_SCHOLARSHIP', { id: editingId, updates: scholarshipData });
+    } else {
+      await dispatchAction('ADD_SCHOLARSHIP', scholarshipData);
+    }
+  };
+
+  const handleDeleteScholarship = async (id: string) => {
+    if (confirm('Delete this scholarship program?')) {
+      await dispatchAction('DELETE_SCHOLARSHIP', { id });
+    }
+  };
+
+  const handleToggleScholarshipVisibility = async (scholarship: Scholarship) => {
+    const makingPublic = scholarship.visibility !== 'public';
+    const msg = makingPublic
+      ? `Share "${scholarship.title}" publicly? All users will see it under Public scholarships.`
+      : `Make "${scholarship.title}" personal? Other users will no longer see it.`;
+    if (!confirm(msg)) return;
+    await dispatchAction('TOGGLE_SCHOLARSHIP_VISIBILITY', { id: scholarship.id });
+  };
+
   const handleExportData = () => {
     if (!data) return;
     const legacy = {
@@ -623,12 +647,35 @@ export default function HomePage() {
             <GraduationCap size={14} />
             <span>Master&apos;s Courses</span>
           </button>
+          <button
+            type="button"
+            className="btn-glow"
+            onClick={() => setViewTab('scholarships')}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              height: '30px',
+              padding: '0 12px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              background: viewTab === 'scholarships' ? 'rgba(245, 158, 11, 0.22)' : 'rgba(255, 255, 255, 0.04)',
+              border: `1px solid ${viewTab === 'scholarships' ? '#f59e0b' : 'rgba(245, 158, 11, 0.45)'}`,
+              color: viewTab === 'scholarships' ? '#fde68a' : '#fbbf24',
+            }}
+          >
+            <Award size={14} />
+            <span>Scholarships</span>
+          </button>
           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: '6px' }}>
             {viewTab === 'my-list'
               ? 'Private + your professors + ones you added'
               : viewTab === 'public'
                 ? 'Public professors + shared Master’s courses'
-                : 'Your Regular Master’s courses — share with Public button'}
+                : viewTab === 'scholarships'
+                  ? 'Personal or public Scholarship Programs — flip any program with the share button'
+                  : 'Your Regular Master’s courses — share with Public button'}
           </span>
         </div>
 
@@ -647,8 +694,19 @@ export default function HomePage() {
           />
         )}
 
+        {/* Scholarship Programs — personal or public */}
+        {viewTab === 'scholarships' && (
+          <ScholarshipsSection
+            scholarships={data.scholarships || []}
+            me={me}
+            onSave={handleSaveScholarship}
+            onDelete={handleDeleteScholarship}
+            onToggleVisibility={handleToggleScholarshipVisibility}
+          />
+        )}
+
         {/* Filter & Search Bar — professor views only */}
-        {viewTab !== 'masters' && (
+        {(viewTab === 'my-list' || viewTab === 'public') && (
           <FilterBar
             filters={filters}
             onChangeFilters={setFilters}
@@ -672,8 +730,8 @@ export default function HomePage() {
           />
         )}
 
-        {/* Topology: Country → Universities (hidden on masters tab) */}
-        {viewTab !== 'masters' && (groupedByCountry.length > 0 ? (
+        {/* Topology: Country → Universities (hidden on masters/scholarships tabs) */}
+        {(viewTab === 'my-list' || viewTab === 'public') && (groupedByCountry.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {/* Collapse all universities + departments */}
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

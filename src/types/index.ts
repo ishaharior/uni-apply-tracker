@@ -111,6 +111,24 @@ export type CourseApplicationStatus =
   | 'offer'
   | 'rejected';
 
+export interface Scholarship {
+  id: string;
+  title: string;
+  organization: string;
+  degreeLevel: string;
+  amount: string;
+  deadline: string;
+  country: string;
+  applicationLink: string;
+  description?: string;
+  visibility: 'public' | 'private';
+  ownerId?: string;
+  ownerName?: string;
+  isMine?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export const COURSE_APPLICATION_STATUSES: CourseApplicationStatus[] = [
   'interested',
   'preparing',
@@ -127,7 +145,8 @@ export type ActivityAction =
   | 'updated_outreach'
   | 'deleted_entity'
   | 'toggled_list'
-  | 'masters_course';
+  | 'masters_course'
+  | 'scholarship';
 
 export interface ActivityLog {
   id: string;
@@ -146,6 +165,7 @@ export interface ActivityLog {
 export interface AppData {
   universities: University[];
   mastersCourses: MastersCourse[];
+  scholarships: Scholarship[];
   me: User;
   activityLogs: ActivityLog[];
   version: string;

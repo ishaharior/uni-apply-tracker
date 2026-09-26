@@ -563,6 +563,103 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, data: appData });
       }
 
+      case 'ADD_SCHOLARSHIP': {
+        const p = payload ?? {};
+        const scholarship = await prisma.scholarship.create({
+          data: {
+            title: String(p.title ?? '').trim() || 'Untitled Scholarship',
+            organization: String(p.organization ?? '').trim(),
+            degreeLevel: String(p.degreeLevel ?? '').trim(),
+            amount: String(p.amount ?? '').trim(),
+            deadline: String(p.deadline ?? '').trim(),
+            country: String(p.country ?? '').trim(),
+            applicationLink: String(p.applicationLink ?? '').trim(),
+            description: String(p.description ?? '').trim(),
+            visibility: p.visibility === 'public' ? 'public' : 'private',
+            ownerId: user.id,
+          },
+          include: { owner: { select: { name: true } } },
+        });
+        await logActivity(
+          user.id,
+          'scholarship',
+          `${user.name} added scholarship: ${scholarship.title}`,
+          { professorName: scholarship.title }
+        );
+        const appData = await getAppData(user);
+        return NextResponse.json({ success: true, data: appData, added: scholarship });
+      }
+
+      case 'UPDATE_SCHOLARSHIP': {
+        const { id, updates } = payload ?? {};
+        const existing = await prisma.scholarship.findUnique({ where: { id } });
+        if (!existing) {
+          return NextResponse.json({ success: false, error: 'Scholarship not found' }, { status: 404 });
+        }
+        if (existing.ownerId !== user.id) {
+          return NextResponse.json({ success: false, error: 'Only the owner can edit this scholarship' }, { status: 403 });
+        }
+        await prisma.scholarship.update({
+          where: { id },
+          data: {
+            ...(updates.title !== undefined ? { title: String(updates.title).trim() || existing.title } : {}),
+            ...(updates.organization !== undefined ? { organization: String(updates.organization).trim() } : {}),
+            ...(updates.degreeLevel !== undefined ? { degreeLevel: String(updates.degreeLevel).trim() } : {}),
+            ...(updates.amount !== undefined ? { amount: String(updates.amount).trim() } : {}),
+            ...(updates.deadline !== undefined ? { deadline: String(updates.deadline).trim() } : {}),
+            ...(updates.country !== undefined ? { country: String(updates.country).trim() } : {}),
+            ...(updates.applicationLink !== undefined ? { applicationLink: String(updates.applicationLink).trim() } : {}),
+            ...(updates.description !== undefined ? { description: String(updates.description).trim() } : {}),
+            ...(updates.visibility !== undefined
+              ? { visibility: updates.visibility === 'public' ? 'public' : 'private' }
+              : {}),
+          },
+        });
+        const appData = await getAppData(user);
+        return NextResponse.json({ success: true, data: appData });
+      }
+
+      case 'DELETE_SCHOLARSHIP': {
+        const { id } = payload ?? {};
+        const existing = await prisma.scholarship.findUnique({ where: { id } });
+        if (!existing) {
+          return NextResponse.json({ success: false, error: 'Scholarship not found' }, { status: 404 });
+        }
+        if (existing.ownerId !== user.id) {
+          return NextResponse.json({ success: false, error: 'Only the owner can delete this scholarship' }, { status: 403 });
+        }
+        await prisma.scholarship.delete({ where: { id } });
+        await logActivity(
+          user.id,
+          'scholarship',
+          `${user.name} deleted scholarship: ${existing.title}`,
+          { professorName: existing.title }
+        );
+        const appData = await getAppData(user);
+        return NextResponse.json({ success: true, data: appData });
+      }
+
+      case 'TOGGLE_SCHOLARSHIP_VISIBILITY': {
+        const { id } = payload ?? {};
+        const existing = await prisma.scholarship.findUnique({ where: { id } });
+        if (!existing) {
+          return NextResponse.json({ success: false, error: 'Scholarship not found' }, { status: 404 });
+        }
+        if (existing.ownerId !== user.id) {
+          return NextResponse.json({ success: false, error: 'Only the owner can share this scholarship' }, { status: 403 });
+        }
+        const next = existing.visibility === 'public' ? 'private' : 'public';
+        await prisma.scholarship.update({ where: { id }, data: { visibility: next } });
+        await logActivity(
+          user.id,
+          'scholarship',
+          `${user.name} set scholarship "${existing.title}" to ${next}`,
+          { professorName: existing.title }
+        );
+        const appData = await getAppData(user);
+        return NextResponse.json({ success: true, data: appData });
+      }
+
       case 'RESET_DATA': {
         await importDataset(prisma, INITIAL_DATASET, { ownerId: user.id });
         const appData = await getAppData(user);

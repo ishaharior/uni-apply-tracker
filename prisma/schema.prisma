@@ -24,6 +24,7 @@ model User {
   bookmarks    ProfessorBookmark[]
   mastersCourses MastersCourse[]
   mastersBookmarks MastersCourseBookmark[]
+  scholarships   Scholarship[]
 }
 
 model University {
@@ -122,6 +123,26 @@ model MastersCourseBookmark {
 
   @@unique([userId, courseId])
   @@index([courseId])
+}
+
+model Scholarship {
+  id              String   @id @default(cuid())
+  title           String
+  organization    String   @default("")
+  degreeLevel     String   @default("")
+  amount          String   @default("")
+  deadline        String   @default("")
+  country         String   @default("")
+  applicationLink String   @default("")
+  description     String   @default("")
+  visibility      String   @default("private")
+  ownerId         String?
+  owner           User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([visibility])
 }
 
 model OutreachRecord {
