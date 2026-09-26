@@ -40,6 +40,7 @@ export async function syncUsers(
         glowColor: friend.glowColor,
         accentBg: friend.accentBg,
         role: friend.role,
+        independent: friend.independent === true,
       },
       create: {
         username,
@@ -50,6 +51,7 @@ export async function syncUsers(
         glowColor: friend.glowColor,
         accentBg: friend.accentBg,
         role: friend.role,
+        independent: friend.independent === true,
       },
     });
     idMap.set(username, user.id);

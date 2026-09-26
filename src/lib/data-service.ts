@@ -22,9 +22,18 @@ type UserRow = {
   glowColor: string;
   accentBg: string;
   role: string;
+  independent: boolean;
 };
 
 export async function getAppData(user: User | UserRow): Promise<AppData> {
+  const onlyOwn = { ownerId: user.id };
+  const professorWhere = user.independent
+    ? onlyOwn
+    : { OR: [{ visibility: 'public' }, { ownerId: user.id }] };
+  const sharedWhere = user.independent
+    ? onlyOwn
+    : { OR: [{ ownerId: user.id }, { visibility: 'public' }] };
+
   const [unis, logs, courses, scholarships] = await Promise.all([
     prisma.university.findMany({
       orderBy: { createdAt: 'asc' },
@@ -33,7 +42,7 @@ export async function getAppData(user: User | UserRow): Promise<AppData> {
           orderBy: { createdAt: 'asc' },
           include: {
             professors: {
-              where: { OR: [{ visibility: 'public' }, { ownerId: user.id }] },
+              where: professorWhere,
               orderBy: { createdAt: 'asc' },
               include: {
                 outreach: { where: { userId: user.id } },
@@ -51,7 +60,7 @@ export async function getAppData(user: User | UserRow): Promise<AppData> {
       take: 50,
     }),
     prisma.mastersCourse.findMany({
-      where: { OR: [{ ownerId: user.id }, { visibility: 'public' }] },
+      where: sharedWhere,
       orderBy: { updatedAt: 'desc' },
       include: {
         owner: { select: { name: true } },
@@ -62,7 +71,7 @@ export async function getAppData(user: User | UserRow): Promise<AppData> {
       },
     }),
     prisma.scholarship.findMany({
-      where: { OR: [{ ownerId: user.id }, { visibility: 'public' }] },
+      where: sharedWhere,
       orderBy: { updatedAt: 'desc' },
       include: { owner: { select: { name: true } } },
     }),
@@ -182,6 +191,7 @@ export async function getAppData(user: User | UserRow): Promise<AppData> {
       glowColor: user.glowColor,
       accentBg: user.accentBg,
       role: user.role,
+      independent: user.independent,
     },
     activityLogs,
   };

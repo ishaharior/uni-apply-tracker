@@ -479,6 +479,7 @@ export default function HomePage() {
           color: data.me.color,
           glowColor: data.me.glowColor,
           accentBg: data.me.accentBg,
+          independent: data.me.independent,
         },
       },
       universities: data.universities.map((uni) => ({

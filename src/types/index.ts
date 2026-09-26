@@ -7,6 +7,7 @@ export interface User {
   glowColor: string;
   accentBg: string;
   role: string;
+  independent: boolean;
 }
 
 export type OutreachStatusType =
@@ -191,6 +192,7 @@ export interface LegacyFriend {
   color: string;
   glowColor: string;
   accentBg: string;
+  independent?: boolean;
 }
 
 export interface LegacyOutreachRecord {

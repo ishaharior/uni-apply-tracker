@@ -684,6 +684,7 @@ export async function POST(req: NextRequest) {
                 color: u.color,
                 glowColor: u.glowColor,
                 accentBg: u.accentBg,
+                independent: u.independent,
               },
             ])
           );

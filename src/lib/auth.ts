@@ -52,6 +52,7 @@ const userSelect = {
   glowColor: true,
   accentBg: true,
   role: true,
+  independent: true,
 } as const;
 
 export async function getCurrentUser(): Promise<User | null> {

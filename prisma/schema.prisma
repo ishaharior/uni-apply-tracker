@@ -17,6 +17,7 @@ model User {
   glowColor    String         @default("rgba(148, 163, 184, 0.35)")
   accentBg     String         @default("rgba(148, 163, 184, 0.12)")
   role         String         @default("applicant")
+  independent  Boolean        @default(false)
   createdAt    DateTime       @default(now())
   outreach     OutreachRecord[]
   activityLogs ActivityLog[]

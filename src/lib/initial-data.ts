@@ -27,6 +27,7 @@ export const INITIAL_FRIENDS: Record<string, LegacyFriend> = {
     color: '#f59e0b', // Amber
     glowColor: 'rgba(245, 158, 11, 0.35)',
     accentBg: 'rgba(245, 158, 11, 0.12)',
+    independent: true,
   },
 };
 

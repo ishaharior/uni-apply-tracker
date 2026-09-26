@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
         glowColor: user.glowColor,
         accentBg: user.accentBg,
         role: user.role,
+        independent: user.independent,
       },
     });
     res.cookies.set(SESSION_COOKIE, token, {
