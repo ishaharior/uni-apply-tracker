@@ -564,6 +564,7 @@ export default function HomePage() {
         me={me}
         onLogout={handleLogout}
         onOpenAddUniversity={() => setUniModal({ isOpen: true, editingUniversity: null })}
+        onOpenMindMap={() => router.push('/mindmap')}
         onOpenTemplates={() => setTemplatesOpen(true)}
         onOpenActivity={() => setActivityOpen(true)}
         onExportData={handleExportData}

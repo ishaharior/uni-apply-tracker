@@ -10,12 +10,14 @@ import {
   Download,
   RotateCcw,
   LogOut,
+  Network,
 } from 'lucide-react';
 
 interface HeaderProps {
   me: User;
   onLogout: () => void;
   onOpenAddUniversity: () => void;
+  onOpenMindMap: () => void;
   onOpenTemplates: () => void;
   onOpenActivity: () => void;
   onExportData: () => void;
@@ -27,6 +29,7 @@ export default function Header({
   me,
   onLogout,
   onOpenAddUniversity,
+  onOpenMindMap,
   onOpenTemplates,
   onOpenActivity,
   onExportData,
@@ -139,6 +142,16 @@ export default function Header({
           >
             <Plus size={14} />
             <span>University</span>
+          </button>
+
+          <button
+            className="btn btn-brand"
+            onClick={onOpenMindMap}
+            title="Your individual application mind map"
+            style={{ fontSize: '0.78rem', padding: '6px 11px' }}
+          >
+            <Network size={14} />
+            <span>Mind Map</span>
           </button>
 
           <button
