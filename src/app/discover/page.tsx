@@ -540,8 +540,10 @@ function DiscoverContent() {
               margin: '16px 0 0',
             }}
           >
-            Added programs land in the <strong style={{ color: '#fde68a' }}>Master&apos;s Courses</strong> tab (private
-            by default — flip the share button there to make them public).
+            Status and deadlines are read from each department / program page itself — pages that don&apos;t publish
+            them show <em>unknown</em>. Added programs land in the{' '}
+            <strong style={{ color: '#fde68a' }}>Master&apos;s Courses</strong> tab (private by default — flip the share
+            button there to make them public).
           </p>
         )}
       </main>
