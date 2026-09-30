@@ -182,6 +182,39 @@ export interface FilterOptions {
 }
 
 /* -------------------------------------------------------------
+ * University homepage discovery (scraping)
+ * ----------------------------------------------------------- */
+export type DegreeLevel = 'bachelor' | 'masters' | 'phd';
+
+export const DEGREE_LEVELS: { value: DegreeLevel; label: string }[] = [
+  { value: 'bachelor', label: "Bachelor's" },
+  { value: 'masters', label: "Master's" },
+  { value: 'phd', label: 'PhD' },
+];
+
+export interface ScrapedProgram {
+  id: string;
+  name: string;
+  universityName: string;
+  degreeLevel: DegreeLevel;
+  url: string;
+  deadline: string;
+  applicationOpen: boolean | null;
+  summary: string;
+  sourceUrl: string;
+}
+
+export interface ScrapeResponse {
+  success: boolean;
+  error?: string;
+  universityName?: string;
+  homepage?: string;
+  degreeLevel?: DegreeLevel;
+  scannedPages?: number;
+  results?: ScrapedProgram[];
+}
+
+/* -------------------------------------------------------------
  * Legacy dataset shape (data/tracker-data.json and backups)
  * ----------------------------------------------------------- */
 export interface LegacyFriend {

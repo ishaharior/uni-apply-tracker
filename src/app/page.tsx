@@ -11,6 +11,7 @@ import UniversityCard from '@/components/UniversityCard';
 import StatusModal from '@/components/StatusModal';
 import MastersCourseStatusModal from '@/components/MastersCourseStatusModal';
 import MastersCoursesSection from '@/components/MastersCoursesSection';
+import DiscoverSearchSection from '@/components/DiscoverSearchSection';
 import ScholarshipsSection from '@/components/ScholarshipsSection';
 import {
   UniversityModal,
@@ -680,6 +681,9 @@ export default function HomePage() {
                   : 'Your Regular Master’s courses — share with Public button'}
           </span>
         </div>
+
+        {/* Program discovery — scrape a university homepage into Master's Programs */}
+        {viewTab === 'masters' && <DiscoverSearchSection />}
 
         {/* Master's Courses — personal management */}
         {viewTab === 'masters' && (

@@ -339,6 +339,14 @@ textarea {
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
+@keyframes spinRotate {
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spinRotate 1s linear infinite;
+}
+
 .animate-fade-in {
   animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

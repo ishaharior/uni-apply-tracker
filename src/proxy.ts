@@ -47,5 +47,5 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/login', '/mindmap', '/api/data/:path*'],
+  matcher: ['/', '/login', '/mindmap', '/discover', '/api/data/:path*', '/api/scrape/:path*'],
 };
