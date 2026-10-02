@@ -3,16 +3,40 @@ import type { CheerioAPI } from 'cheerio';
 import type { AnyNode } from 'domhandler';
 import * as http from 'node:http';
 import * as https from 'node:https';
+import type { Readable } from 'node:stream';
+import * as zlib from 'node:zlib';
 import type { DegreeLevel, ScrapedProgram } from '@/types';
 
-const FETCH_TIMEOUT_MS = 12000;
-const DEPT_CANDIDATE_LIMIT = 9;
+/* -------------------------------------------------------------
+ * Tuning
+ * ----------------------------------------------------------- */
+const FETCH_TIMEOUT_MS = 12_000;
+const FETCH_MIN_TIMEOUT_MS = 3_000;
+const SEED_DEPT_LIMIT = 9;
 const HUB_CANDIDATE_LIMIT = 4;
+const SITEMAP_LINK_LIMIT = 3;
 const WAVE2_LIMIT = 5;
 const ENRICH_LIMIT = 18;
+const ENRICH_CONCURRENCY = 4;
 const MAX_RESULTS = 40;
-const CONCURRENCY = 4;
+const CONCURRENCY = 6;
 const MAX_PAGE_BYTES = 3_000_000;
+const CRAWL_BUDGET_MS = 28_000;
+const OVERALL_BUDGET_MS = 45_000;
+const MAX_SCANNED_PAGES = 22;
+const EARLY_STOP_RESULTS = 20;
+const EARLY_STOP_DEPARTMENTS = 6;
+const SITEMAP_BUDGET_MS = 6_000;
+const SITEMAP_FETCHES = 4;
+const MAX_PAGE_SCAN_CHARS = 300_000;
+const HTML_CACHE_TTL_MS = 10 * 60_000;
+const HTML_CACHE_ENTRIES = 40;
+const HTML_CACHE_BYTES = 24_000_000;
+const NEGATIVE_CACHE_TTL_MS = 30_000;
+const RESULT_CACHE_TTL_MS = 5 * 60_000;
+const RESULT_CACHE_ENTRIES = 16;
+const PAGE_META_TTL_MS = 30 * 60_000;
+const PAGE_META_ENTRIES = 500;
 const RESEARCH_NAME = /\b(research|phd|ph\.d|mphil|mlitt|edd|dclinpsy)\b|\(research\)/i;
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
@@ -99,6 +123,11 @@ const DATE_PATTERNS: RegExp[] = [
   new RegExp(`\\b(?:${MONTHS})\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?(?!\\d)\\b`, 'i'),
 ];
 
+/** Precompiled global variants — built once instead of per extractDeadline() call. */
+const DATE_PATTERNS_G: RegExp[] = DATE_PATTERNS.map((p) =>
+  new RegExp(p.source, p.flags.includes('g') ? p.flags : `${p.flags}g`)
+);
+
 const OPEN_PATTERNS: RegExp[] = [
   /applications?\s+(?:for\b[^.]{0,50}?)?\s*(?:are\s+)?(?:currently\s+|now\s+)?open/i,
   /open\s+for\s+applications/i,
@@ -135,6 +164,7 @@ const JUNK_NAME: RegExp[] = [
   /^(our|about|the (university|college|campus))\b/i,
   /\bsessions\b/i,
   /\bblogs?\b/i,
+  /\bcontact details?\b/i,
   /\bsummer schools?\b/i,
   /\bnewsletters?\b/i,
   /\b(?:student|business|career|research|learning|it|alumni) services\b/i,
@@ -150,7 +180,7 @@ const BARE_LEVEL_NAME =
   /^(bachelor(?:'s|s)?|master(?:'s|s)?|post[-\s]?grad(?:uate)?s?|under[-\s]?graduate?s?|grad(?:uate)?s?|ph\.?\s?d|m\.?s\.?c|b\.?s\.?c)(?:\s+(?:programme?s?|programs?|degrees?|courses?|studies|study))?$/i;
 
 const JUNK_URL =
-  /[\/-](news|newsletter|events?|contact|about|careers|jobs|vacanc|librar|accommodation|clearing|open[-_]?day|visit|prospectus|login|sign[-_]?up|search|privacy|cookie|sitemap|social|sports?|alumni|shop|donate|feedback|terms|weather|parking|maps?|building|blogs?|features?|stories|articles?|summer[-_]?schools?|intranet|current[-_]?students)(\/|\?|$)/i;
+  /[\/-](news|newsletter|events?|contact|about|careers|jobs|vacanc|librar|accommodation|clearing|open[-_]?day|visit|prospectus|login|sign[-_]?up|search|privacy|cookie|sitemap|social|sports?|alumni|shop|donate|feedback|terms|weather|parking|maps?|building|blogs?|features|stories|articles?|summer[-_]?schools?|intranet|current[-_]?students)(\/|\?|$)/i;
 
 const isJunkPath = (pathname: string): boolean => JUNK_URL.test(pathname) || META_URL.test(pathname);
 
@@ -209,10 +239,106 @@ export interface ScrapeResult {
 
 export class ScrapeError extends Error {}
 
+interface HubLink {
+  text: string;
+  href: string;
+  score: number;
+}
+
+interface FetchedPage {
+  html: string;
+  finalUrl: string;
+}
+
+interface PageMeta {
+  status: boolean | null;
+  deadline: string;
+  at: number;
+}
+
+/* -------------------------------------------------------------
+ * Caches (shared across requests while the process is warm)
+ * ----------------------------------------------------------- */
+class TtlLruCache<T> {
+  private store = new Map<string, { value: T; expires: number }>();
+
+  constructor(
+    private readonly defaultTtlMs: number,
+    private readonly maxEntries: number,
+    private readonly maxBytes: number,
+    private readonly sizeOf: (value: T) => number
+  ) {}
+
+  get(key: string): T | undefined {
+    const entry = this.store.get(key);
+    if (!entry) return undefined;
+    if (Date.now() > entry.expires) {
+      this.store.delete(key);
+      return undefined;
+    }
+    this.store.delete(key);
+    this.store.set(key, entry);
+    return entry.value;
+  }
+
+  set(key: string, value: T, ttlMs = this.defaultTtlMs): void {
+    this.store.delete(key);
+    this.store.set(key, { value, expires: Date.now() + ttlMs });
+    while (this.store.size > this.maxEntries || this.totalBytes() > this.maxBytes) {
+      const oldest = this.store.keys().next();
+      if (oldest.done) break;
+      this.store.delete(oldest.value);
+    }
+  }
+
+  private totalBytes(): number {
+    let total = 0;
+    for (const entry of this.store.values()) total += this.sizeOf(entry.value);
+    return total;
+  }
+}
+
+const htmlCache = new TtlLruCache<FetchedPage | null>(
+  HTML_CACHE_TTL_MS,
+  HTML_CACHE_ENTRIES,
+  HTML_CACHE_BYTES,
+  (value) => (value ? value.html.length : 0)
+);
+
+const resultCache = new TtlLruCache<ScrapeResult>(
+  RESULT_CACHE_TTL_MS,
+  RESULT_CACHE_ENTRIES,
+  8_000_000,
+  (value) => value.results.length * 400 + 2048
+);
+
+const pageMetaCache = new Map<string, PageMeta>();
+
+function rememberPageMeta(key: string, meta: { status: boolean | null; deadline: string }): void {
+  pageMetaCache.delete(key);
+  pageMetaCache.set(key, { ...meta, at: Date.now() });
+  if (pageMetaCache.size > PAGE_META_ENTRIES) {
+    const oldest = pageMetaCache.keys().next();
+    if (!oldest.done) pageMetaCache.delete(oldest.value);
+  }
+}
+
+function getPageMeta(key: string): PageMeta | null {
+  const entry = pageMetaCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.at > PAGE_META_TTL_MS) {
+    pageMetaCache.delete(key);
+    return null;
+  }
+  return entry;
+}
+
 /* -------------------------------------------------------------
  * Helpers
  * ----------------------------------------------------------- */
 const cleanText = (value: string): string => value.replace(/\s+/g, ' ').trim();
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function isBlockedHost(hostname: string): boolean {
   return BLOCKED_HOST_PATTERNS.some((p) => p.test(hostname));
@@ -226,12 +352,15 @@ function normalizeUrl(raw: string): string {
   return parsed.toString();
 }
 
+function safeUrl(u: URL): string | null {
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+  if (isBlockedHost(u.hostname)) return null;
+  return u.hostname;
+}
+
 function safeHostname(raw: string): string | null {
   try {
-    const u = new URL(raw);
-    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
-    if (isBlockedHost(u.hostname)) return null;
-    return u.hostname;
+    return safeUrl(new URL(raw));
   } catch {
     return null;
   }
@@ -248,13 +377,9 @@ function stripHash(url: string): string {
 }
 
 /** Same site (exact host or a subdomain of it), ignoring a leading www. */
-function onSameSite(rawUrl: string, siteKey: string): boolean {
-  try {
-    const host = new URL(rawUrl).hostname.replace(/^www\./, '');
-    return host === siteKey || host.endsWith(`.${siteKey}`);
-  } catch {
-    return false;
-  }
+function onSameSiteHost(hostname: string, siteKey: string): boolean {
+  const host = hostname.replace(/^www\./, '');
+  return host === siteKey || host.endsWith(`.${siteKey}`);
 }
 
 function stableId(input: string): string {
@@ -278,12 +403,18 @@ function isJunkName(name: string): boolean {
   return OFFICE_NAME.test(name) || JUNK_NAME.some((re) => re.test(name));
 }
 
-/** Anchor text without svg/hidden noise. */
+/** Anchor text without svg/hidden noise. Cached per node — anchors are visited by up to three passes. */
+const textCache = new WeakMap<object, string>();
+
 function textOf($: CheerioAPI, el: AnyNode): string {
+  const cached = textCache.get(el);
+  if (cached !== undefined) return cached;
   const clone = $(el).clone();
   clone.find('svg, script, style, noscript, .sr-only, .visually-hidden').remove();
   clone.find('[aria-hidden="true"]').remove();
-  return cleanText(clone.text());
+  const value = cleanText(clone.text());
+  textCache.set(el, value);
+  return value;
 }
 
 /** In chrome (nav, header, footer, sidebar) — used when extracting program names. */
@@ -291,10 +422,34 @@ function inChrome($: CheerioAPI, el: AnyNode): boolean {
   return $(el).closest('nav, header, footer, aside, [role="navigation"], [role="banner"], [role="contentinfo"]').length > 0;
 }
 
-type HttpResult = { kind: 'html'; html: string } | { kind: 'redirect'; location: string } | { kind: 'fail' };
+/* -------------------------------------------------------------
+ * HTTP layer — keep-alive pooling, gzip, budget-aware timeouts
+ * ----------------------------------------------------------- */
+type HttpResult = { kind: 'html'; html: string } | { kind: 'redirect'; location: string } | { kind: 'fail'; retryable?: boolean };
+
+interface RequestOptions {
+  /** Absolute epoch ms after which the request should not start / must wrap up. */
+  deadline?: number;
+  timeoutMs?: number;
+  /** 'html' (default) accepts HTML only; 'text' also accepts XML/plain text (sitemaps, robots). */
+  accept?: 'html' | 'text';
+  /** Cache failures briefly to avoid re-hammering dead links. Off for the homepage so a transient failure stays retryable. */
+  negativeCache?: boolean;
+}
+
+const RETRYABLE_CODES = new Set(['ECONNRESET', 'EPIPE', 'ECONNABORTED', 'ETIMEDOUT', 'EAI_AGAIN', 'ENETUNREACH']);
+
+const AGENT_OPTIONS: http.AgentOptions = {
+  keepAlive: true,
+  maxSockets: CONCURRENCY + 2,
+  maxFreeSockets: 4,
+  keepAliveMsecs: 15_000,
+};
+const httpAgent = new http.Agent(AGENT_OPTIONS);
+const httpsAgent = new https.Agent(AGENT_OPTIONS);
 
 /** Single GET on node:http/https — abrupt server closes resolve as null instead of crashing the process (undici assertion bug). */
-function requestOnce(rawUrl: string): Promise<HttpResult> {
+function requestOnce(rawUrl: string, options: RequestOptions = {}): Promise<HttpResult> {
   return new Promise((resolve) => {
     let parsed: URL;
     try {
@@ -309,12 +464,28 @@ function requestOnce(rawUrl: string): Promise<HttpResult> {
       return;
     }
 
+    const startedAt = Date.now();
+    const remaining = options.deadline ? options.deadline - startedAt : Number.POSITIVE_INFINITY;
+    if (remaining < FETCH_MIN_TIMEOUT_MS) {
+      resolve({ kind: 'fail' });
+      return;
+    }
+    // Shrink the timeout as the run deadline approaches so the whole scrape stays bounded.
+    const timeout = Math.min(options.timeoutMs ?? FETCH_TIMEOUT_MS, Math.max(remaining, FETCH_MIN_TIMEOUT_MS));
+    const acceptRe = options.accept === 'text' ? /html|xml|text|csv/i : /html/i;
+
     let settled = false;
+    let timedOut = false;
+    let sawBody = false;
+    let gotHeaders = false;
+    let rawEnded = false;
+    let resRef: http.IncomingMessage | null = null;
     const timers: ReturnType<typeof setTimeout>[] = [];
     const finish = (result: HttpResult) => {
       if (settled) return;
       settled = true;
       for (const t of timers) clearTimeout(t);
+      if (result.kind === 'fail' && resRef && !resRef.destroyed) resRef.destroy();
       resolve(result);
     };
 
@@ -325,10 +496,12 @@ function requestOnce(rawUrl: string): Promise<HttpResult> {
           'User-Agent': USER_AGENT,
           Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.9',
-          Connection: 'close',
+          'Accept-Encoding': 'gzip, deflate, br',
         },
+        agent: transport === https ? httpsAgent : httpAgent,
       },
       (res) => {
+        gotHeaders = true;
         const status = res.statusCode ?? 0;
         const location = res.headers.location;
         if (status >= 301 && status <= 308 && location) {
@@ -342,53 +515,109 @@ function requestOnce(rawUrl: string): Promise<HttpResult> {
           return;
         }
         const contentType = res.headers['content-type'] || '';
-        if (contentType && !contentType.includes('html')) {
+        if (contentType && !acceptRe.test(contentType)) {
           res.destroy();
           finish({ kind: 'fail' });
           return;
         }
 
+        resRef = res;
+        // Premature close of the raw response (before its 'end') is a failure;
+        // a close after 'end' just means the body finished and decompression may still be flushing.
+        res.on('end', () => {
+          rawEnded = true;
+        });
+        res.on('close', () => {
+          if (!rawEnded) finish({ kind: 'fail' });
+        });
+
+        const encoding = String(res.headers['content-encoding'] || '').toLowerCase();
+        let stream: Readable = res;
+        if (/br/.test(encoding)) stream = res.pipe(zlib.createBrotliDecompress());
+        else if (/gzip/.test(encoding)) stream = res.pipe(zlib.createGunzip());
+        else if (/deflate/.test(encoding)) stream = res.pipe(zlib.createUnzip());
+
         const chunks: Buffer[] = [];
         let bytes = 0;
-        res.on('data', (chunk: Buffer) => {
+        const collect = (chunk: Buffer) => {
+          sawBody = true;
           bytes += chunk.length;
           chunks.push(chunk);
           if (bytes >= MAX_PAGE_BYTES) {
+            // Keep a valid prefix — cheerio parses truncated documents fine.
             finish({ kind: 'html', html: Buffer.concat(chunks).subarray(0, MAX_PAGE_BYTES).toString('utf8') });
-            req.destroy();
-            return;
+            res.destroy();
+            stream.destroy();
           }
-        });
-        res.on('end', () => finish({ kind: 'html', html: Buffer.concat(chunks).toString('utf8') }));
+        };
+        stream.on('data', collect);
+        stream.on('end', () => finish({ kind: 'html', html: Buffer.concat(chunks).toString('utf8') }));
+        stream.on('error', () => finish({ kind: 'fail' }));
         res.on('error', () => finish({ kind: 'fail' }));
         res.on('aborted', () => finish({ kind: 'fail' }));
       }
     );
 
-    req.setTimeout(FETCH_TIMEOUT_MS, () => req.destroy());
-    timers.push(setTimeout(() => req.destroy(), FETCH_TIMEOUT_MS * 2));
-    req.on('error', () => finish({ kind: 'fail' }));
-    req.on('close', () => finish({ kind: 'fail' }));
+    req.setTimeout(timeout, () => {
+      timedOut = true;
+      req.destroy();
+    });
+    timers.push(
+      setTimeout(() => {
+        timedOut = true;
+        req.destroy();
+      }, timeout + 6000)
+    );
+    req.on('error', (err: NodeJS.ErrnoException) => {
+      // Retry only fast, pre-body connection resets — never stalled or mid-download failures.
+      const retryable =
+        !timedOut && !sawBody && Date.now() - startedAt < 3000 && RETRYABLE_CODES.has(err.code ?? '');
+      finish({ kind: 'fail', retryable });
+    });
+    // Only fail here if the connection died before any response arrived —
+    // once headers are in, the res-level 'close'/'end' handlers own completion.
+    req.on('close', () => {
+      if (!gotHeaders) finish({ kind: 'fail' });
+    });
   });
 }
 
-async function fetchHtml(rawUrl: string): Promise<{ html: string; finalUrl: string } | null> {
+async function fetchHtml(rawUrl: string, options: RequestOptions = {}): Promise<FetchedPage | null> {
   if (!safeHostname(rawUrl)) return null;
+  const cacheKey = stripHash(rawUrl);
+  const cached = htmlCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
+  const fail = () => {
+    if (options.negativeCache !== false) htmlCache.set(cacheKey, null, NEGATIVE_CACHE_TTL_MS);
+    return null;
+  };
+
   const visited = new Set<string>();
   let current = rawUrl;
   for (let hop = 0; hop < 6; hop++) {
-    if (!safeHostname(current) || visited.has(current)) return null;
+    if (!safeHostname(current) || visited.has(current)) return fail();
     visited.add(current);
-    const result = await requestOnce(current);
-    if (result.kind === 'fail') return null;
-    if (result.kind === 'html') return { html: result.html, finalUrl: current };
+
+    let result = await requestOnce(current, options);
+    if (result.kind === 'fail' && result.retryable) {
+      await sleep(250);
+      if (options.deadline && Date.now() + FETCH_MIN_TIMEOUT_MS > options.deadline) return fail();
+      result = await requestOnce(current, options);
+    }
+    if (result.kind === 'fail') return fail();
+    if (result.kind === 'html') {
+      const page: FetchedPage = { html: result.html, finalUrl: current };
+      htmlCache.set(cacheKey, page);
+      return page;
+    }
     try {
       current = new URL(result.location, current).toString();
     } catch {
-      return null;
+      return fail();
     }
   }
-  return null;
+  return fail();
 }
 
 async function mapPool<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
@@ -459,8 +688,8 @@ export function extractDeadline(input: string): string {
   const text = input.replace(/\s+/g, ' ');
   const collectDates = (s: string) => {
     const hits: { start: number; text: string }[] = [];
-    for (const pattern of DATE_PATTERNS) {
-      const re = new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`);
+    for (const re of DATE_PATTERNS_G) {
+      re.lastIndex = 0;
       for (const m of s.matchAll(re)) hits.push({ start: m.index ?? 0, text: m[0] });
     }
     hits.sort((a, b) => a.start - b.start || b.text.length - a.text.length);
@@ -552,13 +781,9 @@ interface ProgramCandidate {
   confidence: number;
 }
 
-function collectHubLinks(
-  $: CheerioAPI,
-  baseUrl: string,
-  siteKey: string
-): { text: string; href: string; score: number }[] {
+function collectHubLinks($: CheerioAPI, baseUrl: string, siteKey: string): HubLink[] {
   const seen = new Set<string>();
-  const links: { text: string; href: string; score: number }[] = [];
+  const links: HubLink[] = [];
 
   $('a[href]').each((_, el) => {
     const rawHref = $(el).attr('href') || '';
@@ -566,16 +791,18 @@ function collectHubLinks(
     if (!text || text.length < 3 || text.length > 140) return;
     if (/^(mailto:|tel:|javascript:)/i.test(rawHref)) return;
 
-    let absolute: string;
+    let target: URL;
     try {
-      absolute = new URL(rawHref, baseUrl).toString();
+      target = new URL(rawHref, baseUrl);
     } catch {
       return;
     }
-    if (!safeHostname(absolute)) return;
-    if (!onSameSite(absolute, siteKey)) return;
+    if (!safeUrl(target)) return;
+    if (!onSameSiteHost(target.hostname, siteKey)) return;
+    const absolute = target.toString();
     if (BLOCKED_FILE_EXTENSIONS.test(absolute)) return;
-    if (BLOCKED_HOST_HINTS.some((hint) => absolute.toLowerCase().includes(hint))) return;
+    const absoluteLower = absolute.toLowerCase();
+    if (BLOCKED_HOST_HINTS.some((hint) => absoluteLower.includes(hint))) return;
 
     const normalized = stripHash(absolute);
     if (seen.has(normalized)) return;
@@ -586,7 +813,7 @@ function collectHubLinks(
     if (matchesAnyLevel(haystack)) score += 2;
     if (HUB_KEYWORDS.some((kw) => haystack.includes(kw))) score += 2;
     if (DEPARTMENT_LINK.test(text)) score += 3;
-    if (JUNK_URL.test(new URL(absolute).pathname)) score -= 4;
+    if (JUNK_URL.test(target.pathname)) score -= 4;
 
     if (score > 0) links.push({ text, href: absolute, score });
   });
@@ -594,19 +821,15 @@ function collectHubLinks(
   return links;
 }
 
-function extractPrograms(
-  $: CheerioAPI,
-  pageUrl: string,
-  level: DegreeLevel,
-  siteKey: string
-): ProgramCandidate[] {
+function extractPrograms($: CheerioAPI, pageUrl: string, level: DegreeLevel, siteKey: string): ProgramCandidate[] {
   const candidates: ProgramCandidate[] = [];
 
   const resolve = (href: string): string | null => {
     try {
-      const abs = new URL(href, pageUrl).toString();
-      if (!safeHostname(abs)) return null;
-      if (!onSameSite(abs, siteKey)) return null;
+      const target = new URL(href, pageUrl);
+      if (!safeUrl(target)) return null;
+      if (!onSameSiteHost(target.hostname, siteKey)) return null;
+      const abs = target.toString();
       if (BLOCKED_FILE_EXTENSIONS.test(abs)) return null;
       if (BLOCKED_HOST_HINTS.some((hint) => abs.toLowerCase().includes(hint))) return null;
       return abs;
@@ -620,6 +843,9 @@ function extractPrograms(
       .replace(/^(?:[-•*]\s*)+/, '')
       .replace(/\s*[→»>]+\s*$/, '')
       .trim();
+    // Course-list anchors often append meta fields after the title — cut them off.
+    const metaCut = raw.search(/\b(typical offer|ucas (?:course )?code|course code|duration:|entry requirement|clearing code)\b/i);
+    if (metaCut > 3) raw = raw.slice(0, metaCut).trim();
     if (raw.length > 40 && /\s\(.*\)$/.test(raw)) {
       raw = raw.replace(/\s*\(.*\)$/, '').trim();
     }
@@ -710,6 +936,151 @@ function extractPrograms(
   return candidates;
 }
 
+/** Whole-page text trimmed once, shared by status + deadline scans. */
+function pageScanText($: CheerioAPI): string {
+  const text = cleanText($.text());
+  return text.length > MAX_PAGE_SCAN_CHARS ? text.slice(0, MAX_PAGE_SCAN_CHARS) : text;
+}
+
+/* -------------------------------------------------------------
+ * Sitemap-assisted discovery — one cheap probe for direct program URLs
+ * ----------------------------------------------------------- */
+const SITEMAP_LOC = /<(?:[\w.-]+:)?loc>\s*([^<\s]+)\s*<\/(?:[\w.-]+:)?loc>/gi;
+
+const decodeXml = (value: string): string =>
+  value
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&apos;/g, "'");
+
+function slugToText(pathname: string): string {
+  const segments = pathname.split('/').filter(Boolean);
+  const last = segments.length ? segments[segments.length - 1] : '';
+  const words = last
+    .replace(/\.[a-z]{2,4}$/i, '')
+    .replace(/[-_+]+/g, ' ')
+    .replace(/\d{4,}/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (words.length < 4) return '';
+  return words.replace(/\b\w/g, (c) => c.toUpperCase()).slice(0, 100);
+}
+
+function scoreSitemapUrl(href: string, level: DegreeLevel): number {
+  let target: URL;
+  try {
+    target = new URL(href);
+  } catch {
+    return 0;
+  }
+  const path = target.pathname;
+  if (isJunkPath(path)) return 0;
+  if (!levelPathOk(href, level)) return 0;
+  const haystack = path.replace(/[-_/]+/g, ' ').toLowerCase();
+  let score = 0;
+  if (matchesAnyLevel(haystack)) score += 3;
+  if (DEPARTMENT_LINK.test(haystack)) score += 3;
+  if (/(program|programme|course|degree|study|studies|admission)/.test(haystack)) score += 2;
+  if (SUBJECT_NOUN.test(haystack)) score += 1;
+  if (path.split('/').filter(Boolean).length > 7) score -= 1;
+  return score;
+}
+
+function extractSitemapLocs(html: string): { pages: string[]; children: string[] } {
+  const pages: string[] = [];
+  const children: string[] = [];
+  for (const match of html.matchAll(SITEMAP_LOC)) {
+    const url = decodeXml(match[1]);
+    if (/\.xml(\?|$)/i.test(url)) children.push(url);
+    else pages.push(url);
+    if (pages.length + children.length > 20_000) break;
+  }
+  return { pages, children };
+}
+
+/**
+ * Probe sitemap.xml (or the <link rel="sitemap"> declared in the homepage) for
+ * direct department/program URLs. Bounded: at most SITEMAP_FETCHES fetches,
+ * hard deadline, fully failure-tolerant.
+ */
+async function discoverSitemapLinks(
+  home: FetchedPage,
+  siteKey: string,
+  level: DegreeLevel,
+  deadline: number
+): Promise<HubLink[]> {
+  try {
+    const queue: string[] = [];
+    const declared = cheerio.load(home.html)('link[rel="sitemap"]').attr('href');
+    if (declared) {
+      try {
+        const abs = new URL(declared, home.finalUrl).toString();
+        if (safeHostname(abs)) queue.push(abs);
+      } catch {
+        /* ignore bad declared URL */
+      }
+    }
+    if (queue.length === 0) queue.push(new URL('/sitemap.xml', home.finalUrl).toString());
+
+    const visited = new Set<string>();
+    const pages: string[] = [];
+    let fetches = 0;
+    let unknownIndex = false;
+
+    while (queue.length > 0 && fetches < SITEMAP_FETCHES && Date.now() < deadline) {
+      const next = queue.shift();
+      if (!next) break;
+      const key = stripHash(next);
+      if (visited.has(key)) continue;
+      visited.add(key);
+      const doc = await fetchHtml(next, { deadline, timeoutMs: 4000, accept: 'text' });
+      fetches += 1;
+      if (!doc) continue;
+      const locs = extractSitemapLocs(doc.html);
+      if (locs.pages.length === 0 && locs.children.length === 0) unknownIndex = true;
+      pages.push(...locs.pages);
+      queue.push(...locs.children);
+      if (pages.length > 4000) break;
+    }
+
+    // Some sites expose only a sitemap index under a different conventional name.
+    if (unknownIndex && fetches < SITEMAP_FETCHES && Date.now() < deadline) {
+      const alt = new URL('/sitemap_index.xml', home.finalUrl).toString();
+      if (!visited.has(stripHash(alt))) {
+        const doc = await fetchHtml(alt, { deadline, timeoutMs: 4000, accept: 'text' });
+        if (doc) pages.push(...extractSitemapLocs(doc.html).pages);
+      }
+    }
+
+    const scored: HubLink[] = [];
+    const seen = new Set<string>();
+    for (const loc of pages) {
+      let target: URL;
+      try {
+        target = new URL(loc);
+      } catch {
+        continue;
+      }
+      if (!safeUrl(target)) continue;
+      if (!onSameSiteHost(target.hostname, siteKey)) continue;
+      const href = stripHash(target.toString());
+      if (seen.has(href)) continue;
+      seen.add(href);
+      const score = scoreSitemapUrl(href, level);
+      if (score < 3) continue;
+      const text = slugToText(target.pathname);
+      if (!text || isJunkName(text) || BARE_LEVEL_NAME.test(text)) continue;
+      scored.push({ text, href, score });
+    }
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, SITEMAP_LINK_LIMIT);
+  } catch {
+    return [];
+  }
+}
+
 /* -------------------------------------------------------------
  * Main entry
  * ----------------------------------------------------------- */
@@ -724,7 +1095,15 @@ export async function scrapeUniversity(rawUrl: string, level: DegreeLevel): Prom
     throw new ScrapeError('That URL is not allowed. Use a public http(s) university homepage.');
   }
 
-  const home = await fetchHtml(homepage);
+  const cacheKey = `${stripHash(homepage)}|${level}`;
+  const cachedResult = resultCache.get(cacheKey);
+  if (cachedResult) return structuredClone(cachedResult);
+
+  const startedAt = Date.now();
+  const overallDeadline = startedAt + OVERALL_BUDGET_MS;
+  const crawlDeadline = startedAt + CRAWL_BUDGET_MS;
+
+  const home = await fetchHtml(homepage, { deadline: overallDeadline, negativeCache: false });
   if (!home) {
     throw new ScrapeError('Could not load that homepage. Check the link and try again.');
   }
@@ -733,13 +1112,17 @@ export async function scrapeUniversity(rawUrl: string, level: DegreeLevel): Prom
   const fallbackHost = new URL(home.finalUrl).hostname.replace(/^www\./, '');
   const universityName = extractUniversityName($home) || fallbackHost;
   const homeSummary = extractSummary($home, level);
-  const homeStatus = detectApplicationStatus($home.text());
-  const homeDeadline = extractDeadline($home.text());
+  const homeScan = pageScanText($home);
+  const homeStatus = detectApplicationStatus(homeScan);
+  const homeDeadline = extractDeadline(homeScan);
 
   const results: ScrapedProgram[] = [];
   const seenUrls = new Set<string>();
   const seenNames = new Set<string>();
-  const scannedHubKeys = new Set<string>([stripHash(home.finalUrl).toLowerCase()]);
+  const linkKey = (href: string) => stripHash(href).toLowerCase();
+  const homepageKey = linkKey(home.finalUrl);
+  const scannedHubKeys = new Set<string>([homepageKey]);
+  rememberPageMeta(homepageKey, { status: homeStatus, deadline: homeDeadline });
 
   const addResult = (
     name: string,
@@ -751,7 +1134,7 @@ export async function scrapeUniversity(rawUrl: string, level: DegreeLevel): Prom
     isHubFallback = false
   ) => {
     if (results.length >= MAX_RESULTS) return;
-    const urlKey = stripHash(url).toLowerCase();
+    const urlKey = linkKey(url);
     const nameKey = name.toLowerCase();
     if (seenUrls.has(urlKey) || seenNames.has(nameKey)) return;
     if (!isHubFallback && scannedHubKeys.has(urlKey)) return;
@@ -771,12 +1154,8 @@ export async function scrapeUniversity(rawUrl: string, level: DegreeLevel): Prom
   };
 
   const siteKey = fallbackHost;
-  const startedAt = Date.now();
-  const homepageKey = stripHash(home.finalUrl).toLowerCase();
-  type HubLink = { text: string; href: string; score: number };
   const byScore = (a: HubLink, b: HubLink) => b.score - a.score;
   const isDeptLink = (l: HubLink) => DEPARTMENT_LINK.test(l.text);
-  const linkKey = (href: string) => stripHash(href).toLowerCase();
   const filterFresh = (links: HubLink[]) =>
     links.filter((l) => {
       const key = linkKey(l.href);
@@ -792,10 +1171,37 @@ export async function scrapeUniversity(rawUrl: string, level: DegreeLevel): Prom
     return [...depts.slice(0, deptLimit), ...hubs.slice(0, hubLimit)];
   };
 
-  // 1) Discover department / faculty / program hub pages (departments first)
-  const discoveredLinks: HubLink[] = filterFresh(collectHubLinks($home, home.finalUrl, siteKey));
-  const candidates = splitCandidates(discoveredLinks, DEPT_CANDIDATE_LIMIT, HUB_CANDIDATE_LIMIT);
-  for (const c of candidates) scannedHubKeys.add(linkKey(c.href));
+  const departmentCount = () => results.filter((r) => DEPARTMENT_LINK.test(r.name)).length;
+
+  /** Budget guard for crawl workers: stop fetching when time/pages/results are spent or we have enough. */
+  const crawlActive = () =>
+    results.length < MAX_RESULTS &&
+    scannedPages < MAX_SCANNED_PAGES &&
+    !(results.length >= EARLY_STOP_RESULTS && departmentCount() >= EARLY_STOP_DEPARTMENTS) &&
+    Date.now() - startedAt < CRAWL_BUDGET_MS;
+
+  // 1) Discover department / faculty / program hub pages (departments first),
+  //    plus direct program URLs from the sitemap when available.
+  const homeLinks = filterFresh(collectHubLinks($home, home.finalUrl, siteKey));
+  const discoveredLinks: HubLink[] = [...homeLinks];
+  const seedLinks = splitCandidates(homeLinks, SEED_DEPT_LIMIT, HUB_CANDIDATE_LIMIT);
+
+  if (Date.now() - startedAt < SITEMAP_BUDGET_MS) {
+    const sitemapLinks = filterFresh(await discoverSitemapLinks(home, siteKey, level, startedAt + SITEMAP_BUDGET_MS));
+    const seeded = new Set(seedLinks.map((l) => linkKey(l.href)));
+    const homed = new Set(homeLinks.map((l) => linkKey(l.href)));
+    let extras = 0;
+    for (const l of sitemapLinks.sort(byScore)) {
+      if (extras >= SITEMAP_LINK_LIMIT) break;
+      const key = linkKey(l.href);
+      if (seeded.has(key) || homed.has(key)) continue;
+      seeded.add(key);
+      seedLinks.push(l);
+      extras += 1;
+    }
+  }
+
+  for (const c of seedLinks) scannedHubKeys.add(linkKey(c.href));
 
   // 2) Programs listed directly on the homepage
   for (const p of extractPrograms($home, home.finalUrl, level, siteKey)) {
@@ -823,16 +1229,14 @@ export async function scrapeUniversity(rawUrl: string, level: DegreeLevel): Prom
   let scannedPages = 1;
   const hubEntries: HubEntry[] = [];
 
-  const processHubPage = (
-    candidate: { text: string; href: string },
-    fetched: { html: string; finalUrl: string }
-  ) => {
+  const processHubPage = (candidate: HubLink, fetched: FetchedPage) => {
     scannedPages += 1;
     const $ = cheerio.load(fetched.html);
-    const pageText = $.text();
-    const pageStatus = detectApplicationStatus(pageText);
-    const pageDeadline = extractDeadline(pageText);
+    const scan = pageScanText($);
+    const pageStatus = detectApplicationStatus(scan);
+    const pageDeadline = extractDeadline(scan);
     const pageSummary = extractSummary($, level);
+    rememberPageMeta(linkKey(fetched.finalUrl), { status: pageStatus, deadline: pageDeadline });
 
     for (const l of filterFresh(collectHubLinks($, fetched.finalUrl, siteKey)).slice(0, 40)) {
       discoveredLinks.push(l);
@@ -865,22 +1269,27 @@ export async function scrapeUniversity(rawUrl: string, level: DegreeLevel): Prom
     });
   };
 
-  const fetchAndProcess = async (list: { text: string; href: string; score: number }[]) => {
-    const pages = await mapPool(list, CONCURRENCY, async (candidate) => {
-      const fetched = await fetchHtml(candidate.href);
-      if (!fetched) return null;
-      return { candidate, fetched };
-    });
-    for (const page of pages) {
-      if (page) processHubPage(page.candidate, page.fetched);
-    }
+  // Fetch and parse in the same worker so parsing overlaps other workers' downloads.
+  const fetchAndProcess = async (list: HubLink[]) => {
+    let cursor = 0;
+    const worker = async () => {
+      for (;;) {
+        const idx = cursor++;
+        if (idx >= list.length) return;
+        if (!crawlActive()) return;
+        const candidate = list[idx];
+        const fetched = await fetchHtml(candidate.href, { deadline: crawlDeadline });
+        if (!fetched) continue;
+        processHubPage(candidate, fetched);
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, list.length) }, worker));
   };
 
-  await fetchAndProcess(candidates);
+  await fetchAndProcess(seedLinks);
 
   // 3) Second wave — crawl departmental links one level deeper when departments are still missing
-  const departmentCount = () => results.filter((r) => DEPARTMENT_LINK.test(r.name)).length;
-  if (departmentCount() < 6 && Date.now() - startedAt < 25000) {
+  if (departmentCount() < EARLY_STOP_DEPARTMENTS && Date.now() - startedAt < CRAWL_BUDGET_MS) {
     const queued = new Set<string>();
     const unique: HubLink[] = [];
     for (const l of discoveredLinks) {
@@ -926,29 +1335,44 @@ export async function scrapeUniversity(rawUrl: string, level: DegreeLevel): Prom
     );
   }
 
-  // 5) Enrich results that still lack a status or deadline by reading their own page (budgeted).
-  //    Taught programs get the enrichment budget before research-degree listings.
+  // 5) Enrich results that still lack a status or deadline. Pages already scanned during the
+  //    crawl are filled from the meta cache (no extra request); only the rest are fetched.
+  const applyMeta = (r: ScrapedProgram, meta: { status: boolean | null; deadline: string }) => {
+    if (meta.status !== null) r.applicationOpen = meta.status;
+    if (!r.deadline && meta.deadline) {
+      r.deadline = meta.deadline;
+      if (r.applicationOpen === null) r.applicationOpen = statusFromDeadline(meta.deadline);
+    }
+  };
+
   const toEnrich = results
     .filter((r) => r.applicationOpen === null || !r.deadline)
     .sort((a, b) => Number(RESEARCH_NAME.test(a.name)) - Number(RESEARCH_NAME.test(b.name)))
     .slice(0, ENRICH_LIMIT);
-  await mapPool(toEnrich, 3, async (r) => {
-    if (Date.now() - startedAt > 35000) return;
+
+  for (const r of toEnrich) {
+    const meta = getPageMeta(linkKey(r.url));
+    if (meta) applyMeta(r, meta);
+  }
+
+  const pending = toEnrich.filter((r) => r.applicationOpen === null || !r.deadline);
+  await mapPool(pending, ENRICH_CONCURRENCY, async (r) => {
+    if (Date.now() >= overallDeadline) return;
     const key = linkKey(r.url);
+    const known = getPageMeta(key);
+    if (known) {
+      applyMeta(r, known);
+      return;
+    }
     if (scannedHubKeys.has(key)) return;
-    const page = await fetchHtml(r.url);
+    const page = await fetchHtml(r.url, { deadline: overallDeadline });
     if (!page) return;
     scannedHubKeys.add(key);
     scannedPages += 1;
-    const $ = cheerio.load(page.html);
-    const text = $.text();
-    const status = detectApplicationStatus(text);
-    const deadline = extractDeadline(text);
-    if (status !== null) r.applicationOpen = status;
-    if (!r.deadline && deadline) {
-      r.deadline = deadline;
-      if (r.applicationOpen === null) r.applicationOpen = statusFromDeadline(deadline);
-    }
+    const scan = pageScanText(cheerio.load(page.html));
+    const meta = { status: detectApplicationStatus(scan), deadline: extractDeadline(scan) };
+    rememberPageMeta(key, meta);
+    applyMeta(r, meta);
   });
 
   // Departmental pages first, then taught programs, then research degrees, then everything else
@@ -970,11 +1394,13 @@ export async function scrapeUniversity(rawUrl: string, level: DegreeLevel): Prom
     return a.name.localeCompare(b.name);
   });
 
-  return {
+  const result: ScrapeResult = {
     universityName,
     homepage: home.finalUrl,
     degreeLevel: level,
     scannedPages,
     results,
   };
+  resultCache.set(cacheKey, structuredClone(result));
+  return result;
 }
